@@ -1,0 +1,14 @@
+---
+title: "More ePub magazines available"
+author: "Jim Hague"
+date: "2018-07-06T16:12:00+02:00"
+draft: false
+type: "blog"
+categories: ["news"]
+banner: "img/banners/banner-3.jpg"
+---
+== July's C Vu Journal has been published.
+
+The July 2018 ACCU C Vu journal has been published and should arrive
+at members' addresses in the next few days. C Vu 30-3 and previous
+issues of C Vu can be accessed via Journals menu (ACCU members only).

@@ -1,0 +1,14 @@
+---
+title: "August Overload"
+author: "Jim Hague"
+date: "2018-08-12T14:45:00+02:00"
+draft: false
+type: "blog"
+categories: ["news"]
+banner: "img/banners/banner-1.jpg"
+---
+== August's Overload Journal has been published.
+
+The August 2018 ACCU Overload journal has been published and should
+arrive at members' addresses in the next few days. Overload 146 and
+previous issues of Overload can be accessed in Overload Online.

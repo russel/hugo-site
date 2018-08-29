@@ -1,0 +1,58 @@
+---
+title: "ACCU Local Groups"
+author: "Jim Hague"
+date: "2018-08-29T17:05:00+02:00"
+draft: false
+categories: ["main"]
+---
+:linkattrs:
+
+= ACCU Local Groups
+
+ACCU has branches and local groups in the UK and the rest of the
+world.  The branches and other less formal groups of ACCU members hold
+regular meetings which take the form of presentations or discussions
+about all things software related.
+
+Information about local meetings is also available via the combined
+http://oldsite.accu.org/index.php/accu_documents/community/calendar[calendar].
+
+For members interested in starting a local group, there is a
+http://oldsite.accu.org/index.php/accu_branches/starter_kit[starter kit]
+(requires member login).
+
+More information about ACCU branches:
+
+[cols="3*^a,a"]
+|===
+| image::/img/accu/accuBayArea.png[ACCU Bay Area, width=200, link=https://oldsite.accu.org/index.php/accu_branches/accu_usa/]
+| {{< twitterfollow accuBayArea >}}
+| image::/img/meetup_logo.png[Meetup logo, link=https://www.meetup.com/ACCU-Bay-Area/]
+| Contact https://www.meetup.com/ACCU-Bay-Area/members/12279553/[Jon Kalb (via Meetup Message)]
+
+| image::/img/accu/accuBristolBath.png[ACCU Bristol & Bath, 200, link=http://www.meetup.com/ACCU-Bristol-Bath/]
+| {{< twitterfollow accuBristol >}}
+| image::/img/meetup_logo.png[Meetup logo, link=http://www.meetup.com/ACCU-Bristol-Bath/]
+| Contact poc.bristol@accu.org
+
+| image::/img/accu/accuCambridge.png[ACCU Cambridge, 200, link=http://www.meetup.com/ACCU-Cambridge/]
+| {{< twitterfollow ACCU_Cambridge >}}
+| image::/img/meetup_logo.png[Meetup logo, link=http://www.meetup.com/ACCU-Cambridge/]
+| Contact poc.cambridge@accu.org
+
+| image::/img/accu/accuGreece-allblue-v1.png[ACCU Greece, 200, link=http://www.meetup.com/ACCU-Cambridge/]
+| image::/img/FB-FindUsonFacebook-online-144.png[Facebook, link="http://www.facebook.com/accugreece]
+|
+| Contact through Facebook
+
+| image::/img/accu/accuLondonnotags.png[ACCU Bay Area, width=200, link=https://oldsite.accu.org/index.php/accu_branches/accu_london/]
+| {{< twitterfollow accuLondon >}}
+| image::/img/meetup_logo.png[Meetup logo, link=http://www.meetup.com/ACCU-London/]
+| Contact poc.london@accu.org
+
+| image::/img/accu/accuOxford.png[ACCU Oxford, 200, link=http://www.meetup.com/ACCU-Oxford/]
+| {{< twitterfollow accuOxford >}}
+| image::/img/meetup_logo.png[Meetup logo, link=http://www.meetup.com/ACCU-Oxford/]
+http://www.lunch.org.uk/wiki/accuoxford[past meetings]
+| Contact poc.oxford@accu.org
+|===
