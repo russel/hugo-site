@@ -40,7 +40,7 @@ class BaseOutput:
             return s
 
     def unknown_tag(self, tag):
-        # print('Unknown Tag {}'.format(tag.name))
+        print('Unknown Tag {}'.format(tag.name), file=sys.stderr)
         return self.convert_children(tag)
 
 class AdocOutput(BaseOutput):
