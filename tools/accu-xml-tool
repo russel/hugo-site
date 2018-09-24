@@ -20,13 +20,9 @@ class BaseOutput:
             # Newlines are not significate in HTML (apart from PRE),
             # but may be in an output format (e.g. they are in AsciiDoc).
             # So replace any with a space unless indicated.
-            text = soup.string
-            if replace_newlines:
-                text = text.replace('\n', ' ')
-            return [text];
+            return [self.fixup_string(soup.string, replace_newlines)]
         elif isinstance(soup, bs4.Tag):
-            f = getattr(self, soup.name, self.unknown_tag)
-            return f(soup)
+            return getattr(self, soup.name, self.unknown_tag)(soup)
         else:
             return self.convert_children(soup, replace_newlines)
 
@@ -36,6 +32,12 @@ class BaseOutput:
             for c in soup.children:
                 res.extend(self.convert(c, replace_newlines))
         return res
+
+    def fixup_string(self, s, replace_newlines):
+        if replace_newlines:
+            return s.replace('\n', ' ')
+        else:
+            return s
 
     def unknown_tag(self, tag):
         # print('Unknown Tag {}'.format(tag.name))
@@ -77,6 +79,10 @@ class AdocOutput(BaseOutput):
         if spaces and text:
             text[0] = text[0].lstrip()
         return text
+
+    def fixup_string(self, s, replace_newlines):
+        s = s.replace('C++', '{cpp}')
+        return super().fixup_string(s, replace_newlines)
 
     def p(self, tag):
         if self.has_class(tag, 'bio'):
@@ -146,6 +152,29 @@ class AdocOutput(BaseOutput):
 
     def li(self, tag):
         return ['\n{} '.format(self.list_item[-1])] + self.convert_children(tag)
+
+    def table(self, tag):
+        sidebar = self.has_class(tag, 'sidebartable')
+        if sidebar:
+            res = ['\n\n****\n|====\n']
+        else:
+            res = ['\n\n|====\n']
+        res = res + self.trim(self.convert_children(tag))
+        if sidebar:
+            res = res + ['\n|====\n****\n']
+        else:
+            res = res + ['\n|====\n']
+        return res
+
+    def tr(self, tag):
+        return ['\n'] + self.convert_children(tag)
+
+    def td(self, tag):
+        if self.has_class(tag, 'title'):
+            res = ['\nh|']
+        else:
+            res = ['\na|']
+        return res + self.convert_children(tag)
 
     def output(self, f, body):
         if self.title:
