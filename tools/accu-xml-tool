@@ -97,6 +97,8 @@ class AdocOutput(BaseOutput):
                     break
             by = tag.get_text().rsplit('~ ', 1)[1].replace('\n', '')
             return ['\n[quote,{by}]\n____\n'.format(by=by)] + quote + ['\n____\n']
+        elif self.has_class(tag, 'blockquote'):
+            return ['\n====\n'] + self.convert_children(tag) + ['\n====\n']
         else:
             return ['\n'] + self.convert_children(tag) + ['\n']
 
