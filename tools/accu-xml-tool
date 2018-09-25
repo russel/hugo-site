@@ -111,6 +111,12 @@ class AdocOutput(BaseOutput):
     def strong(self, tag):
         return ['*'] + self.convert_children(tag) + ['*']
 
+    def sup(self, tag):
+        return ['^'] + self.convert_children(tag) + ['^']
+
+    def sub(self, tag):
+        return ['~'] + self.convert_children(tag) + ['~']
+
     def span(self, tag):
         if self.has_class(tag, 'author'):
             self.author = ''.join(self.convert_children(tag))
@@ -127,6 +133,18 @@ class AdocOutput(BaseOutput):
 
     def h2(self, tag):
         return ['\n== '] + self.convert_children(tag) + ['\n']
+
+    def h3(self, tag):
+        return ['\n=== '] + self.convert_children(tag) + ['\n']
+
+    def h4(self, tag):
+        return ['\n==== '] + self.convert_children(tag) + ['\n']
+
+    def h5(self, tag):
+        return ['\n===== '] + self.convert_children(tag) + ['\n']
+
+    def h6(self, tag):
+        return ['\n====== '] + self.convert_children(tag) + ['\n']
 
     def pre(self, tag):
         return ['\n[source]\n----\n'] + self.trim(self.convert_children(tag, False), False) + ['\n----\n']
