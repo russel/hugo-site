@@ -6,6 +6,7 @@
 # (the default) or HTML.
 
 import argparse
+import re
 import sys
 
 import bs4
@@ -46,6 +47,8 @@ class AdocOutput(BaseOutput):
         self.ol_level = 1
         self.list_item = []
         self.in_pre = False
+        self.in_biblio_ref = False
+        self.in_biblio_re = re.compile(r"\[.+?\]\s*(?P<ref>.*)")
 
     @staticmethod
     def has_class(tag, classname):
@@ -76,10 +79,15 @@ class AdocOutput(BaseOutput):
         return text
 
     def get_string(self, s):
-        s = s.replace('C++', '{cpp}')
+        if self.in_biblio_ref:
+            # Remove initial [?] plus spaces.
+            match = self.in_biblio_re.search(s)
+            if match:
+                s = match.group('ref')
         if not self.in_pre:
             s = s.replace('\n', ' ')\
                 .replace('[', 'pass:[[]')
+        s = s.replace('C++', '{cpp}')
         return [s]
 
     def p(self, tag):
@@ -96,11 +104,25 @@ class AdocOutput(BaseOutput):
                     quote = quote[0:i]
                     break
             by = tag.get_text().rsplit('~ ', 1)[1].replace('\n', '')
-            return ['\n[quote,{by}]\n____\n'.format(by=by)] + quote + ['\n____\n']
+            return ['\n\n[quote,{by}]\n____\n'.format(by=by)] + quote + ['\n____\n']
         elif self.has_class(tag, 'blockquote'):
-            return ['\n====\n'] + self.convert_children(tag) + ['\n====\n']
+            return ['\n\n====\n'] + self.convert_children(tag) + ['\n====\n']
+        elif self.has_class(tag, 'bibliomixed'):
+            # These are a single reference. The first child is the anchor.
+            # This is followed by text starting with the reference '[n]',
+            # then spaces and then the body of the reference, e.g.:
+            #
+            # <a id="[2]"></a>[2]      Principles behind the Agile Manifesto
+            #
+            # For AsciiDoctor we need to remove the reference text and
+            # spaces, and present each reference as an item in an unordered
+            # list.
+            self.in_biblio_ref = True
+            ref = self.convert_children(tag)
+            self.in_biblio_ref = False
+            return ['\n- '] + ref + ['\n']
         else:
-            return ['\n'] + self.convert_children(tag) + ['\n']
+            return ['\n\n'] + self.convert_children(tag) + ['\n']
 
     def code(self, tag):
         return ['`'] + self.convert_children(tag) + ['`']
@@ -129,28 +151,33 @@ class AdocOutput(BaseOutput):
             self.title = ''.join(self.convert_children(tag))
             return []
         else:
-            return ['\n= '] + self.convert_children(tag) + ['\n']
+            return ['\n\n= '] + self.convert_children(tag) + ['\n']
 
     def h2(self, tag):
-        return ['\n== '] + self.convert_children(tag) + ['\n']
+        # A h2 block 'References' may have a bibliography...
+        title = self.convert_children(tag)
+        if ''.join(title) == 'References':
+            return ['\n\n[bibliography]\n== '] + title + ['\n']
+        else:
+            return ['\n\n== '] + title + ['\n']
 
     def h3(self, tag):
-        return ['\n=== '] + self.convert_children(tag) + ['\n']
+        return ['\n\n=== '] + self.convert_children(tag) + ['\n']
 
     def h4(self, tag):
-        return ['\n==== '] + self.convert_children(tag) + ['\n']
+        return ['\n\n==== '] + self.convert_children(tag) + ['\n']
 
     def h5(self, tag):
-        return ['\n===== '] + self.convert_children(tag) + ['\n']
+        return ['\n\n===== '] + self.convert_children(tag) + ['\n']
 
     def h6(self, tag):
-        return ['\n====== '] + self.convert_children(tag) + ['\n']
+        return ['\n\n====== '] + self.convert_children(tag) + ['\n']
 
     def pre(self, tag):
         self.in_pre = True
         src = self.convert_children(tag)
         self.in_pre = False
-        return ['\n[source]\n----\n'] + self.trim(src, False) + ['\n----\n']
+        return ['\n\n[source]\n----\n'] + self.trim(src, False) + ['\n----\n']
 
     def br(self, tag):
         return [' +\n']
@@ -196,6 +223,26 @@ class AdocOutput(BaseOutput):
         else:
             res = ['\na¦']
         return res + self.convert_children(tag)
+
+    def a(self, tag):
+        id = tag.get('id')
+        if id:
+            if id[0] == '[' and id[-1] == ']':
+                # It's a bibliography entry. These should have no content.
+                id = id[1:-1]
+                return ['[[[ref{id},{id}]]] '.format(id=id)]
+            else:
+                # Define an anchor.
+                return ['[[ref{id},{id}]] '.format(id=id)] + self.convert_children(tag)
+        href = tag.get('href')
+        if href:
+            if href.startswith('#[') and href.endswith(']'):
+                # It's a biblio reference. Add reference. The content should
+                # just repeat the reference.
+                return ['<<ref{ref}>> '.format(ref=href[2:-1])]
+            else:
+                # It's a regular link.
+                return ['link:{url}['.format(url=href)] + self.convert_children(tag) + ['] ']
 
     def output(self, f, body):
         if self.title:
