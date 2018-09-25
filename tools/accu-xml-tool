@@ -85,9 +85,13 @@ class AdocOutput(BaseOutput):
             if match:
                 s = match.group('ref')
         if not self.in_pre:
+            # This appears to be a regular image bug.
+            if s == ' />':
+                s = ''
             s = s.replace('\n', ' ')\
                 .replace('[', 'pass:[[]')
         s = s.replace('C++', '{cpp}')
+        # TODO. Prevent character substitution on =>, <=, -> <=>.
         return [s]
 
     def p(self, tag):
@@ -244,11 +248,18 @@ class AdocOutput(BaseOutput):
                 # It's a regular link.
                 return ['link:{url}['.format(url=href)] + self.convert_children(tag) + ['] ']
 
+    def img(self, tag):
+        src = tag.get('src')
+        if src.startswith('http://accu.org'):
+            src = src.replace('http://accu.org/content/images/', '', 1)
+        return ['\nimage::{src}[]\n'.format(src=src)]
+
     def output(self, f, body):
         if self.title:
             print('= {}'.format(self.title), file=f)
         if self.author:
             print(':author: {}'.format(self.author), file=f)
+        print(':imagesdir: https://accu.org/content/images/')
 
         for o in body:
             print(o, file=f, end='')
