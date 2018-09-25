@@ -174,9 +174,9 @@ class AdocOutput(BaseOutput):
     def table(self, tag):
         sidebar = self.has_class(tag, 'sidebartable')
         if sidebar:
-            res = ['\n\n****\n|====\n']
+            res = ['\n\n****\n[separator=¦]\n|====\n']
         else:
-            res = ['\n\n|====\n']
+            res = ['\n\n[separator=¦]\n|====\n']
         res = res + self.trim(self.convert_children(tag))
         if sidebar:
             res = res + ['\n|====\n****\n']
@@ -189,9 +189,9 @@ class AdocOutput(BaseOutput):
 
     def td(self, tag):
         if self.has_class(tag, 'title'):
-            res = ['\nh|']
+            res = ['\nh¦']
         else:
-            res = ['\na|']
+            res = ['\na¦']
         return res + self.convert_children(tag)
 
     def output(self, f, body):
