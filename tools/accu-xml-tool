@@ -134,6 +134,8 @@ class AdocOutput(BaseOutput):
             return ['\n\n[quote,{by}]\n____\n'.format(by=by)] + quote + ['\n____']
         elif self.has_class(tag, 'blockquote'):
             return ['\n\n====\n'] + self.convert_children(tag) + ['\n====']
+        elif self.has_class(tag, 'Byline'):
+            return ['\n\n[.lead]\n'] + self.convert_children(tag)
         elif self.has_class(tag, 'bibliomixed'):
             # These are a single reference. The first child is the anchor.
             # This is followed by text starting with the reference '[n]',
