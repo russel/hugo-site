@@ -241,9 +241,9 @@ class AdocOutput(BaseOutput):
 
     def td(self, tag):
         if self.has_class(tag, 'title'):
-            res = ['\nh¦']
+            res = [' h¦']
         else:
-            res = ['\na¦']
+            res = [' a¦']
         return res + self.convert_children(tag)
 
     def a(self, tag):
