@@ -55,6 +55,10 @@ class AdocOutput(BaseOutput):
         self.bio = None
         self.ul_level = 1
         self.ol_level = 1
+        self.table_level = -1
+        self.table_cell_delim = ['¦', '!']
+        self.table_delim_start = ['[separator=¦]\n|===', '!===']
+        self.table_delim_end = ['|===', '!===']
         self.list_item = []
         self.in_pre = False
         self.in_biblio_ref = False
@@ -215,16 +219,21 @@ class AdocOutput(BaseOutput):
         return ['\n{} '.format(self.list_item[-1])] + self.convert_children(tag)
 
     def table(self, tag):
+        self.table_level += 1
+        if self.table_level >= len(self.table_cell_delim):
+            print('Sorry, I can\'t nest tables that deep.', file=sys.stderr)
+            sys.exit(1)
         sidebar = self.has_class(tag, 'sidebartable')
         if sidebar:
-            res = ['\n\n****\n[separator=¦]\n|====\n']
+            res = ['\n\n****\n{}\n'.format(self.table_delim_start[self.table_level])]
         else:
-            res = ['\n\n[separator=¦]\n|====\n']
+            res = ['\n\n{}\n'.format(self.table_delim_start[self.table_level])]
         res = res + self.trim(self.convert_children(tag))
         if sidebar:
-            res = res + ['\n|====\n****\n']
+            res = res + ['\n{}\n****\n'.format(self.table_delim_end[self.table_level])]
         else:
-            res = res + ['\n|====\n']
+            res = res + ['\n{}\n'.format(self.table_delim_end[self.table_level])]
+        self.table_level -= 1
 
         # Look out for particular table formations and replace with
         # more appropriate markup.
@@ -250,10 +259,13 @@ class AdocOutput(BaseOutput):
 
     def td(self, tag):
         if self.has_class(tag, 'title'):
-            res = [' h¦']
+            res = [' h{}'.format(self.table_cell_delim[self.table_level])]
         else:
-            res = [' a¦']
+            res = [' a{}'.format(self.table_cell_delim[self.table_level])]
         return res + self.convert_children(tag)
+
+    def th(self, tag):
+        return [' h{}'.format(self.table_cell_delim[self.table_level])] + self.convert_children(tag)
 
     def a(self, tag):
         id = tag.get('id')
