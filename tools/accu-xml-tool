@@ -21,6 +21,8 @@ class BaseOutput:
 
         Return a list of strings.
         """
+        if isinstance(soup, bs4.PreformattedString):
+            return []
         if isinstance(soup, bs4.NavigableString):
             return self.get_string(soup.string)
         elif isinstance(soup, bs4.Tag):
@@ -29,13 +31,12 @@ class BaseOutput:
                 tag_name = 'document_root'
             return getattr(self, tag_name, self.unknown_tag)(soup)
         else:
-            return self.convert_children(soup, replace_newlines)
+            return []
 
     def convert_children(self, soup):
         res = []
-        if soup is not None and hasattr(soup, 'children'):
-            for c in soup.children:
-                res.extend(self.convert(c))
+        for c in soup.children:
+            res.extend(self.convert(c))
         return res
 
     def get_string(self, s):
