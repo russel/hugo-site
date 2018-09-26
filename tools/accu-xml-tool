@@ -63,8 +63,8 @@ class AdocOutput(BaseOutput):
         self.in_pre = False
         self.in_biblio_ref = False
         self.in_biblio_re = re.compile(r'\[.+?\]\s*(?P<ref>.*)')
-        self.table_listing_re = re.compile('(?P<prelude>.*)\n\\[separator=¦\\]\n\\|====\na¦\s+(?P<src>\\[source\\]\n----\n.*?\n----)\n\s*h¦Listing (?P<no>.*?)\n\\|====\n(?P<postlude>.*)', re.DOTALL)
-        self.table_image_re = re.compile('(?P<prelude>.*)\n\\[separator=¦\\]\n\\|====\na¦\s+image::(?P<img>.*?)\\[\\]\n\s*h¦Figure (?P<no>.*?)\n\\|====\n(?P<postlude>.*)', re.DOTALL)
+        self.table_listing_re = re.compile('(?P<prelude>.*)\n\\[separator=¦\\]\n\\|===\n\s*a¦\s+(?P<src>\\[source\\]\n----\n.*?\n----)\n\s*h¦Listing (?P<no>.*?)\n\\|===\n(?P<postlude>.*)', re.DOTALL)
+        self.table_image_re = re.compile('(?P<prelude>.*)\n\\[separator=¦\\]\n\\|===\n\s*a¦\s+image::(?P<img>.*?)\\[\\]\n\s*h¦Figure (?P<no>.*?)\n\\|===\n(?P<postlude>.*)', re.DOTALL)
 
     @staticmethod
     def has_class(tag, classname):
