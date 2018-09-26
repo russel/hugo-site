@@ -142,7 +142,7 @@ class AdocOutput(BaseOutput):
             by = tag.get_text().rsplit('~ ', 1)[1].replace('\n', '')
             return ['\n\n[quote,{by}]\n____\n'.format(by=by)] + quote + ['\n____']
         elif self.has_class(tag, 'blockquote'):
-            return ['\n\n====\n'] + self.trim(self.convert_children(tag)) + ['\n====']
+            return self.blockquote(tag)
         elif self.has_class(tag, 'Byline'):
             return ['\n\n[.lead]\n'] + self.trim(self.convert_children(tag))
         elif self.has_class(tag, 'bibliomixed'):
@@ -161,6 +161,9 @@ class AdocOutput(BaseOutput):
             return ['\n\n- '] + ref
         else:
             return ['\n\n'] + self.trim(self.convert_children(tag))
+
+    def blockquote(self, tag):
+        return ['\n\n====\n'] + self.trim(self.convert_children(tag)) + ['\n====']
 
     def code(self, tag):
         return ['`'] + self.convert_children(tag) + ['`']
