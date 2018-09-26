@@ -67,6 +67,9 @@ class BaseOutput:
     def html(self, tag):
         return self.convert_children(tag)
 
+    def body(self, tag):
+        return self.convert_children(tag)
+
     def unknown_tag(self, tag):
         print('Unknown Tag {}'.format(tag.name), file=sys.stderr)
         return self.convert_children(tag)
@@ -139,9 +142,9 @@ class AdocOutput(BaseOutput):
             by = tag.get_text().rsplit('~ ', 1)[1].replace('\n', '')
             return ['\n\n[quote,{by}]\n____\n'.format(by=by)] + quote + ['\n____']
         elif self.has_class(tag, 'blockquote'):
-            return ['\n\n====\n'] + self.convert_children(tag) + ['\n====']
+            return ['\n\n====\n'] + self.trim(self.convert_children(tag)) + ['\n====']
         elif self.has_class(tag, 'Byline'):
-            return ['\n\n[.lead]\n'] + self.convert_children(tag)
+            return ['\n\n[.lead]\n'] + self.trim(self.convert_children(tag))
         elif self.has_class(tag, 'bibliomixed'):
             # These are a single reference. The first child is the anchor.
             # This is followed by text starting with the reference '[n]',
@@ -157,13 +160,19 @@ class AdocOutput(BaseOutput):
             self.in_biblio_ref = False
             return ['\n\n- '] + ref
         else:
-            return ['\n\n'] + self.convert_children(tag)
+            return ['\n\n'] + self.trim(self.convert_children(tag))
 
     def code(self, tag):
         return ['`'] + self.convert_children(tag) + ['`']
 
+    def tt(self, tag):
+        return self.code(tag)
+
     def em(self, tag):
         return ['_'] + self.convert_children(tag) + ['_']
+
+    def i(self, tag):
+        return self.em(tag)
 
     def strong(self, tag):
         return ['*'] + self.convert_children(tag) + ['*']
@@ -236,7 +245,7 @@ class AdocOutput(BaseOutput):
     def li(self, tag):
         # If there are blank lines in the item, replace with '+' to
         # keep everything with the current bullet.
-        item = self.convert_children(tag)
+        item = self.trim(self.convert_children(tag))
         lines = ''.join(item).splitlines()
         for i in range(len(lines)):
             if not lines[i].strip():
@@ -294,6 +303,8 @@ class AdocOutput(BaseOutput):
 
     def a(self, tag):
         id = tag.get('id')
+        if not id:
+            id = tag.get('name')
         if id:
             if id[0] == '[' and id[-1] == ']':
                 # It's a bibliography entry. These should have no content.
