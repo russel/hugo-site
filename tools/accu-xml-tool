@@ -54,7 +54,8 @@ class AdocOutput(BaseOutput):
         self.list_item = []
         self.in_pre = False
         self.in_biblio_ref = False
-        self.in_biblio_re = re.compile(r"\[.+?\]\s*(?P<ref>.*)")
+        self.in_biblio_re = re.compile(r'\[.+?\]\s*(?P<ref>.*)')
+        self.table_listing_re = re.compile('(?P<prelude>.*)\n\\[separator=¦\\]\n\\|====\na¦\s+(?P<src>\\[source\\]\n----\n.*?\n----)\n\s*h¦Listing (?P<no>.*?)\n\\|====\n(?P<postlude>.*)', re.DOTALL)
 
     @staticmethod
     def has_class(tag, classname):
@@ -222,6 +223,17 @@ class AdocOutput(BaseOutput):
             res = res + ['\n|====\n****\n']
         else:
             res = res + ['\n|====\n']
+
+        # Look out for particular table formations and replace with
+        # more appropriate markup.
+        s = ''.join(res)
+        match = self.table_listing_re.fullmatch(s)
+        if match:
+            return [ '{prelude}\n.Listing {no}\n{src}\n{postlude}'.format(
+                prelude=match.group('prelude'),
+                src=match.group('src'),
+                no=match.group('no'),
+                postlude=match.group('postlude')) ]
         return res
 
     def tr(self, tag):
