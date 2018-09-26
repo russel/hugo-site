@@ -223,7 +223,14 @@ class AdocOutput(BaseOutput):
         return res
 
     def li(self, tag):
-        return ['\n{} '.format(self.list_item[-1])] + self.convert_children(tag)
+        # If there are blank lines in the item, replace with '+' to
+        # keep everything with the current bullet.
+        item = self.convert_children(tag)
+        lines = ''.join(item).splitlines()
+        for i in range(len(lines)):
+            if not lines[i].strip():
+                lines[i] = '+'
+        return ['\n\n{} '.format(self.list_item[-1])] + ['\n'.join(lines)]
 
     def table(self, tag):
         self.table_level += 1
