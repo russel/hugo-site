@@ -65,7 +65,7 @@ class AdocOutput(BaseOutput):
         self.in_pre = False
         self.in_biblio_ref = False
         self.in_biblio_re = re.compile(r'\[.+?\]\s*(?P<ref>.*)')
-        self.table_listing_re = re.compile('(?P<prelude>.*)\n\\[separator=¦\\]\n\\|===\n\s*a¦\s+(?P<src>\\[source\\]\n----\n.*?\n----)\n\s*h¦Listing (?P<no>.*?)\n\\|===\n(?P<postlude>.*)', re.DOTALL)
+        self.table_listing_re = re.compile('(?P<prelude>.*)\n\\[separator=¦\\]\n\\|===\n\s*a¦\s+(?P<src>\\[source\\]\n----\n.*?\n----)\s*\n\s*h¦Listing (?P<no>.*?)\n\\|===\n(?P<postlude>.*)', re.DOTALL)
         self.table_image_re = re.compile('(?P<prelude>.*)\n\\[separator=¦\\]\n\\|===\n\s*a¦\s+image::(?P<img>.*?)\\[\\]\n\s*h¦Figure (?P<no>.*?)\n\\|===\n(?P<postlude>.*)', re.DOTALL)
 
     @staticmethod
@@ -114,7 +114,7 @@ class AdocOutput(BaseOutput):
 
     def p(self, tag):
         if self.has_class(tag, 'bio'):
-            self.bio = ['\n\n.{author}\n****\n'] + self.trim(self.convert_children(tag)) + ['\n****\n']
+            self.bio = ['\n\n.{author}\n****\n'] + self.trim(self.convert_children(tag)) + ['\n****']
             return []
         elif self.has_class(tag, 'quote'):
             # This is a bit nasty. We want the formatted text (so we include
@@ -131,9 +131,9 @@ class AdocOutput(BaseOutput):
                     quote.extend(self.convert(c))
             quote = self.trim(quote)
             by = tag.get_text().rsplit('~ ', 1)[1].replace('\n', '')
-            return ['\n\n[quote,{by}]\n____\n'.format(by=by)] + quote + ['\n____\n']
+            return ['\n\n[quote,{by}]\n____\n'.format(by=by)] + quote + ['\n____']
         elif self.has_class(tag, 'blockquote'):
-            return ['\n\n====\n'] + self.convert_children(tag) + ['\n====\n']
+            return ['\n\n====\n'] + self.convert_children(tag) + ['\n====']
         elif self.has_class(tag, 'bibliomixed'):
             # These are a single reference. The first child is the anchor.
             # This is followed by text starting with the reference '[n]',
@@ -147,9 +147,9 @@ class AdocOutput(BaseOutput):
             self.in_biblio_ref = True
             ref = self.convert_children(tag)
             self.in_biblio_ref = False
-            return ['\n- '] + ref + ['\n']
+            return ['\n\n- '] + ref
         else:
-            return ['\n\n'] + self.convert_children(tag) + ['\n']
+            return ['\n\n'] + self.convert_children(tag)
 
     def code(self, tag):
         return ['`'] + self.convert_children(tag) + ['`']
@@ -181,27 +181,27 @@ class AdocOutput(BaseOutput):
         # A h2 block 'References' may have a bibliography...
         title = self.convert_children(tag)
         if ''.join(title) == 'References':
-            return ['\n\n[bibliography]\n== '] + title + ['\n']
+            return ['\n\n[bibliography]\n== '] + title
         else:
-            return ['\n\n== '] + title + ['\n']
+            return ['\n\n== '] + title
 
     def h3(self, tag):
-        return ['\n\n=== '] + self.convert_children(tag) + ['\n']
+        return ['\n\n=== '] + self.convert_children(tag)
 
     def h4(self, tag):
-        return ['\n\n==== '] + self.convert_children(tag) + ['\n']
+        return ['\n\n==== '] + self.convert_children(tag)
 
     def h5(self, tag):
-        return ['\n\n===== '] + self.convert_children(tag) + ['\n']
+        return ['\n\n===== '] + self.convert_children(tag)
 
     def h6(self, tag):
-        return ['\n\n====== '] + self.convert_children(tag) + ['\n']
+        return ['\n\n====== '] + self.convert_children(tag)
 
     def pre(self, tag):
         self.in_pre = True
         src = self.convert_children(tag)
         self.in_pre = False
-        return ['\n\n[source]\n----\n'] + self.trim(src, False) + ['\n----\n']
+        return ['\n\n[source]\n----\n'] + self.trim(src, False) + ['\n----']
 
     def br(self, tag):
         return [' +\n']
@@ -237,9 +237,9 @@ class AdocOutput(BaseOutput):
             res = ['\n\n{}\n'.format(self.table_delim_start[self.table_level])]
         res = res + self.trim(self.convert_children(tag))
         if sidebar:
-            res = res + ['\n{}\n****\n'.format(self.table_delim_end[self.table_level])]
+            res = res + ['\n{}\n****'.format(self.table_delim_end[self.table_level])]
         else:
-            res = res + ['\n{}\n'.format(self.table_delim_end[self.table_level])]
+            res = res + ['\n{}'.format(self.table_delim_end[self.table_level])]
         self.table_level -= 1
 
         # Look out for particular table formations and replace with
@@ -262,7 +262,7 @@ class AdocOutput(BaseOutput):
         return res
 
     def tr(self, tag):
-        return ['\n'] + self.convert_children(tag)
+        return ['\n\n'] + self.convert_children(tag)
 
     def td(self, tag):
         if self.has_class(tag, 'title'):
