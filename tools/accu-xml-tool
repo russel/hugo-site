@@ -16,6 +16,21 @@ class BaseOutput:
         """ Convert the document and return the converted text."""
         return ''.join(self.convert(soup))
 
+    @staticmethod
+    def has_class(tag, classname):
+        """ See if tag has a class of given name.
+
+        BS behaves returns a list of classes on HTML input, and
+        a single class in XML input. Deal with both.
+        """
+        cl = tag.get('class')
+        if not cl:
+            return False
+        if isinstance(cl, list):
+            return classname in cl
+        else:
+            return classname == cl
+
     def convert(self, soup):
         """ Convert everything below this tag.
 
@@ -46,14 +61,20 @@ class BaseOutput:
     def document_root(self, tag):
         return self.convert_children(tag)
 
+    def xml(self, tag):
+        return self.convert_children(tag)
+
+    def html(self, tag):
+        return self.convert_children(tag)
+
     def unknown_tag(self, tag):
         print('Unknown Tag {}'.format(tag.name), file=sys.stderr)
         return self.convert_children(tag)
 
 class AdocOutput(BaseOutput):
-    def __init__(self):
-        self.title = '(No title)'
-        self.author = None
+    def __init__(self, title=None, author=None):
+        self.title = title
+        self.author = author
         self.bio = None
         self.ul_level = 1
         self.ol_level = 1
@@ -67,21 +88,6 @@ class AdocOutput(BaseOutput):
         self.in_biblio_re = re.compile(r'\[.+?\]\s*(?P<ref>.*)')
         self.table_listing_re = re.compile('(?P<prelude>.*)\n\\[separator=¦\\]\n\\|===\n\s*a¦\s+(?P<src>\\[source\\]\n----\n.*?\n----)\s*\n\s*h¦Listing (?P<no>.*?)\n\\|===\n(?P<postlude>.*)', re.DOTALL)
         self.table_image_re = re.compile('(?P<prelude>.*)\n\\[separator=¦\\]\n\\|===\n\s*a¦\s+image::(?P<img>.*?)\\[\\]\n\s*h¦Figure (?P<no>.*?)\n\\|===\n(?P<postlude>.*)', re.DOTALL)
-
-    @staticmethod
-    def has_class(tag, classname):
-        """ See if tag has a class of given name.
-
-        BS behaves returns a list of classes on HTML input, and
-        a single class in XML input. Deal with both.
-        """
-        cl = tag.get('class')
-        if not cl:
-            return False
-        if isinstance(cl, list):
-            return classname in cl
-        else:
-            return classname == cl
 
     @staticmethod
     def trim(text, spaces=True):
@@ -312,12 +318,6 @@ class AdocOutput(BaseOutput):
             src = src.replace('http://accu.org/content/images/', '', 1)
         return ['\nimage::{src}[]\n'.format(src=src)]
 
-    def html(self, tag):
-        return self.convert_children(tag)
-
-    def xml(self, tag):
-        return self.convert_children(tag)
-
     def convert_document(self, soup):
         """ Convert the document and return the converted text."""
         body = self.convert(soup)
@@ -332,19 +332,20 @@ class AdocOutput(BaseOutput):
 class HtmlOutput(BaseOutput):
     pass
 
-def convert_file(f, input, output):
-    soup = bs4.BeautifulSoup(f, input)
-    res = output.convert_document(soup)
-    print(res)
-
 def main():
-    parser = argparse.ArgumentParser(description='convert ACCU XML/HTML.')
+    parser = argparse.ArgumentParser(description='convert ACCU XML/HTML to AsciiDoc or HTML.')
     parser.add_argument('--input-format', dest='input_format', action='store',
                         choices=['html', 'xml'], default='xml',
                         help='input format - html or xml', metavar='FORMAT')
     parser.add_argument('--output-format', dest='output_format', action='store',
                         choices=['html', 'adoc'], default='adoc',
                         help='output format - adoc or html', metavar='FORMAT')
+    parser.add_argument('-t', '--title', dest='title',
+                        action='store', default='(No title)',
+                        help='article title', metavar='TITLE')
+    parser.add_argument('-a', '--author', dest='author',
+                        action='store', default=None,
+                        help='article author', metavar='AUTHOR')
     parser.add_argument('input', type=argparse.FileType('r'),
                         help='input XML or HTML file',
                         metavar='XML/HTML file')
@@ -355,12 +356,13 @@ def main():
         "html": "lxml"
         }
     outputs = {
-        "adoc": AdocOutput(),
+        "adoc": AdocOutput(title=args.title, author=args.author),
         "html": HtmlOutput()
     }
 
-    convert_file(args.input, parsers[args.input_format], outputs[args.output_format])
-
+    soup = bs4.BeautifulSoup(args.input, parsers[args.input_format])
+    print(outputs[args.output_format].convert_document(soup))
+    sys.exit(0)
 
 if __name__ == "__main__":
     main()
