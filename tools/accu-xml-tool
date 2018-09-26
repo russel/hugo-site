@@ -21,7 +21,8 @@ class BaseOutput:
 
         Return a list of strings.
         """
-        if isinstance(soup, bs4.PreformattedString):
+        if isinstance(soup, (bs4.Comment, bs4.CData, bs4.ProcessingInstruction,
+                             bs4.Declaration, bs4.Doctype)):
             return []
         if isinstance(soup, bs4.NavigableString):
             return self.get_string(soup.string)
@@ -129,7 +130,6 @@ class AdocOutput(BaseOutput):
                 else:
                     quote.extend(self.convert(c))
             quote = self.trim(quote)
-            print(quote, file=sys.stderr)
             by = tag.get_text().rsplit('~ ', 1)[1].replace('\n', '')
             return ['\n\n[quote,{by}]\n____\n'.format(by=by)] + quote + ['\n____\n']
         elif self.has_class(tag, 'blockquote'):
