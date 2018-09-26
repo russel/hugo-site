@@ -12,6 +12,10 @@ import sys
 import bs4
 
 class BaseOutput:
+    def convert_document(self, soup):
+        """ Convert the document and return the converted text."""
+        return ''.join(self.convert(soup))
+
     def convert(self, soup):
         """ Convert everything below this tag.
 
@@ -46,7 +50,7 @@ class BaseOutput:
 
 class AdocOutput(BaseOutput):
     def __init__(self):
-        self.title = None
+        self.title = '(No title)'
         self.author = None
         self.bio = None
         self.ul_level = 1
@@ -56,6 +60,7 @@ class AdocOutput(BaseOutput):
         self.in_biblio_ref = False
         self.in_biblio_re = re.compile(r'\[.+?\]\s*(?P<ref>.*)')
         self.table_listing_re = re.compile('(?P<prelude>.*)\n\\[separator=¦\\]\n\\|====\na¦\s+(?P<src>\\[source\\]\n----\n.*?\n----)\n\s*h¦Listing (?P<no>.*?)\n\\|====\n(?P<postlude>.*)', re.DOTALL)
+        self.table_image_re = re.compile('(?P<prelude>.*)\n\\[separator=¦\\]\n\\|====\na¦\s+image::(?P<img>.*?)\\[\\]\n\s*h¦Figure (?P<no>.*?)\n\\|====\n(?P<postlude>.*)', re.DOTALL)
 
     @staticmethod
     def has_class(tag, classname):
@@ -158,11 +163,8 @@ class AdocOutput(BaseOutput):
             return ['*'] + self.convert_children(tag) + ['*']
 
     def h1(self, tag):
-        if not self.title:
-            self.title = ''.join(self.convert_children(tag))
-            return []
-        else:
-            return ['\n\n= '] + self.convert_children(tag) + ['\n']
+        self.title = ''.join(self.convert_children(tag))
+        return []
 
     def h2(self, tag):
         # A h2 block 'References' may have a bibliography...
@@ -234,6 +236,13 @@ class AdocOutput(BaseOutput):
                 src=match.group('src'),
                 no=match.group('no'),
                 postlude=match.group('postlude')) ]
+        match = self.table_image_re.fullmatch(s)
+        if match:
+            return [ '{prelude}\n.Figure {no}\nimage::{img}[Figure {no}]\n{postlude}'.format(
+                prelude=match.group('prelude'),
+                img=match.group('img'),
+                no=match.group('no'),
+                postlude=match.group('postlude')) ]
         return res
 
     def tr(self, tag):
@@ -261,10 +270,10 @@ class AdocOutput(BaseOutput):
             if href.startswith('#[') and href.endswith(']'):
                 # It's a biblio reference. Add reference. The content should
                 # just repeat the reference.
-                return ['<<ref{ref}>> '.format(ref=href[2:-1])]
+                return ['<<ref{ref}>>'.format(ref=href[2:-1])]
             else:
                 # It's a regular link.
-                return ['link:{url}['.format(url=href)] + self.convert_children(tag) + ['] ']
+                return ['link:{url}['.format(url=href)] + self.convert_children(tag) + [']']
 
     def img(self, tag):
         src = tag.get('src')
@@ -278,26 +287,24 @@ class AdocOutput(BaseOutput):
     def xml(self, tag):
         return self.convert_children(tag)
 
-    def output(self, f, body):
-        if self.title:
-            print('= {}'.format(self.title), file=f)
+    def convert_document(self, soup):
+        """ Convert the document and return the converted text."""
+        body = self.convert(soup)
+        res = [ '= {title}\n'.format(title=self.title) ]
         if self.author:
-            print(':author: {}'.format(self.author), file=f)
-        print(':imagesdir: https://accu.org/content/images/')
-
-        for o in body:
-            print(o, file=f, end='')
+            res = res + [ ':author: {author}\n'.format(author=self.author) ]
+        res = res + [ ':imagesdir: https://accu.org/content/images/\n:figure-caption!:\n' ] + body
         if self.bio:
-            for o in self.bio:
-                print(o, file=f, end='')
+            res = res + self.bio
+        return ''.join(res)
 
 class HtmlOutput(BaseOutput):
     pass
 
 def convert_file(f, input, output):
     soup = bs4.BeautifulSoup(f, input)
-    body = output.convert(soup)
-    output.output(sys.stdout, body)
+    res = output.convert_document(soup)
+    print(res)
 
 def main():
     parser = argparse.ArgumentParser(description='convert ACCU XML/HTML.')
