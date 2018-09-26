@@ -322,6 +322,7 @@ class AdocOutput(BaseOutput):
             else:
                 # It's a regular link.
                 return ['link:{url}['.format(url=href)] + self.convert_children(tag) + [']']
+        return []
 
     def img(self, tag):
         src = tag.get('src')
