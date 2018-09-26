@@ -331,6 +331,27 @@ class AdocOutput(BaseOutput):
 
 class HtmlOutput(BaseOutput):
     pass
+    def __init__(self):
+        self.bio = None
+
+    def unknown_tag(self, tag):
+        return [tag.prettify()]
+
+    def p(self, tag):
+        if self.has_class(tag, 'bio'):
+            self.bio = tag.prettify()
+            return []
+        else:
+            return [tag.prettify()]
+
+    def convert_document(self, soup):
+        """ Convert the document and return the converted text."""
+        body = self.convert(soup)
+        res = ['<html>\n'] + body
+        if self.bio:
+            res = res + [self.bio]
+        res = res + ['</html>']
+        return ''.join(res)
 
 def main():
     parser = argparse.ArgumentParser(description='convert ACCU XML/HTML to AsciiDoc or HTML.')
