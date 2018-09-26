@@ -86,8 +86,8 @@ class AdocOutput(BaseOutput):
         self.in_pre = False
         self.in_biblio_ref = False
         self.in_biblio_re = re.compile(r'\[.+?\]\s*(?P<ref>.*)')
-        self.table_listing_re = re.compile('(?P<prelude>.*)\n\\[separator=¦\\]\n\\|===\n\s*a¦\s+(?P<src>\\[source\\]\n----\n.*?\n----)\s*\n\s*h¦Listing (?P<no>.*?)\n\\|===\n(?P<postlude>.*)', re.DOTALL)
-        self.table_image_re = re.compile('(?P<prelude>.*)\n\\[separator=¦\\]\n\\|===\n\s*a¦\s+image::(?P<img>.*?)\\[\\]\n\s*h¦Figure (?P<no>.*?)\n\\|===\n(?P<postlude>.*)', re.DOTALL)
+        self.table_listing_re = re.compile('(?P<prelude>.*)\n\\[separator=¦\\]\n\\|===\n\s*a¦\s+(?P<src>\\[source\\]\n----\n.*?\n----)\s*\n\s*h¦(?P<id>.*?)\n\\|===\n(?P<postlude>.*)', re.DOTALL)
+        self.table_image_re = re.compile('(?P<prelude>.*)\n\\[separator=¦\\]\n\\|===\n\s*a¦\s+image::(?P<img>.*?)\\[\\]\n\s*h¦(?P<id>.*?)\n\\|===\n(?P<postlude>.*)', re.DOTALL)
 
     @staticmethod
     def trim(text, spaces=True):
@@ -265,17 +265,17 @@ class AdocOutput(BaseOutput):
         s = ''.join(res)
         match = self.table_listing_re.fullmatch(s)
         if match:
-            return [ '{prelude}\n.Listing {no}\n{src}\n{postlude}'.format(
+            return [ '{prelude}\n.{id}\n{src}\n{postlude}'.format(
                 prelude=match.group('prelude'),
                 src=match.group('src'),
-                no=match.group('no'),
+                id=match.group('id'),
                 postlude=match.group('postlude')) ]
         match = self.table_image_re.fullmatch(s)
         if match:
-            return [ '{prelude}\n.Figure {no}\nimage::{img}[Figure {no}]\n{postlude}'.format(
+            return [ '{prelude}\n.{id}\nimage::{img}[{id}]\n{postlude}'.format(
                 prelude=match.group('prelude'),
                 img=match.group('img'),
-                no=match.group('no'),
+                id=match.group('id'),
                 postlude=match.group('postlude')) ]
         return res
 
