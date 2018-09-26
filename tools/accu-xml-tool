@@ -116,14 +116,20 @@ class AdocOutput(BaseOutput):
             self.bio = ['\n\n.{author}\n****\n'] + self.trim(self.convert_children(tag)) + ['\n****\n']
             return []
         elif self.has_class(tag, 'quote'):
-            # Tricky. We want formatted up to a line
-            # starting '-', and then the rest without formatting
-            # which we pray will be - <author>, <source>.
-            quote = self.trim(self.convert_children(tag))
-            for i in range(0, len(quote)):
-                if quote[i].strip().startswith('~ '):
-                    quote = quote[0:i]
+            # This is a bit nasty. We want the formatted text (so we include
+            # e.g. <br> in the quote), but only up to text starting '~ '.
+            # The rest, unformatted, should be <author>,<source>.
+            # But the separator may itself be in formatted text. I've seen
+            # author and source formatted <em> and <strong>. So we have to
+            # ignore items from the separator onwards.
+            quote = []
+            for c in tag.children:
+                if c.string and c.string.lstrip().startswith('~ '):
                     break
+                else:
+                    quote.extend(self.convert(c))
+            quote = self.trim(quote)
+            print(quote, file=sys.stderr)
             by = tag.get_text().rsplit('~ ', 1)[1].replace('\n', '')
             return ['\n\n[quote,{by}]\n____\n'.format(by=by)] + quote + ['\n____\n']
         elif self.has_class(tag, 'blockquote'):
