@@ -179,25 +179,28 @@ class AdocOutput(BaseOutput):
         self.title = ''.join(self.convert_children(tag))
         return []
 
-    def h2(self, tag):
-        # A h2 block 'References' may have a bibliography...
+    def hn(self, tag, n):
+        # Any header block 'References' may have a bibliography.
         title = self.convert_children(tag)
+        hdr = '=' * n
         if ''.join(title) == 'References':
-            return ['\n\n[bibliography]\n== '] + title
-        else:
-            return ['\n\n== '] + title
+            hdr = '[bibliography]\n' + hdr
+        return [ '\n\n' + hdr + ' '] + title
+
+    def h2(self, tag):
+        return self.hn(tag, 2)
 
     def h3(self, tag):
-        return ['\n\n=== '] + self.convert_children(tag)
+        return self.hn(tag, 3)
 
     def h4(self, tag):
-        return ['\n\n==== '] + self.convert_children(tag)
+        return self.hn(tag, 4)
 
     def h5(self, tag):
-        return ['\n\n===== '] + self.convert_children(tag)
+        return self.hn(tag, 5)
 
     def h6(self, tag):
-        return ['\n\n====== '] + self.convert_children(tag)
+        return self.hn(tag, 6)
 
     def pre(self, tag):
         self.in_pre = True
