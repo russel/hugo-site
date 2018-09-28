@@ -1,0 +1,93 @@
+#!/usr/bin/python3
+#
+# accu-dump-xar
+#
+# Dump Xaraya journal files to individal JSON files.
+
+import argparse
+import datetime
+import json
+import pathlib
+import sys
+
+import pymysql
+
+def main():
+    parser = argparse.ArgumentParser(description='dump Xaraya articles to JSON')
+    parser.add_argument('--pubtype', dest='pubtype', action='store',
+                        choices=['news', 'docs', 'weblinks',
+                                 'pdf', 'epub',
+                                 'blogs', 'journals'], default='journals',
+                        help='type of publication', metavar='PUBTYPE')
+    parser.add_argument('--host', dest='host',
+                        action='store', default='localhost',
+                        help='database host', metavar='HOSTNAME')
+    parser.add_argument('-o', '--output-dir', dest='outputdir',
+                        action='store', default='.',
+                        help='directory for output files', metavar='DIR')
+    parser.add_argument('-p', '--password', dest='password',
+                        action='store', required=True,
+                        help='database password', metavar='PASSWORD')
+    args = parser.parse_args()
+
+    pubtypes = { "news": 1, "docs": 2, "weblinks": 6,
+                 "pdf": 14, "epub": 16,
+                 "blogs": 10, "journals": 13 }
+    propids = { 96: "keywords", 97: "author", 98: "author-email",
+                99: "author2", 100: "author2-email" }
+
+    try:
+        db = pymysql.connect(args.host, 'accuorg_xarad', args.password, 'accuorg_xar')
+        cursor = db.cursor()
+        article_sql = """\
+select xar_aid, xar_title, xar_summary, xar_body, xar_pubdate
+from xar_articles
+where xar_pubtypeid={pubtypeid}""".format(pubtypeid=pubtypes[args.pubtype])
+        try:
+            cursor.execute(article_sql)
+            for row in cursor.fetchall():
+                article = {
+                    "id": row[0],
+                    "title": row[1],
+                    "summary": row[2],
+                    "body": row[3],
+                    "date": datetime.datetime.fromtimestamp(row[4]).isoformat()
+                }
+                article_id = row[0]
+                cursor2 = db.cursor()
+                dyndata_sql = """\
+select xar_dd_propid, xar_dd_value
+from xar_dynamic_data
+where xar_dd_itemid={}""".format(article_id)
+                cursor2.execute(dyndata_sql)
+                for row2 in cursor2.fetchall():
+                    if row2[0] in propids:
+                        article[propids[row2[0]]] = row2[1]
+                cat_sql = """\
+select xar_name, xar_description from xar_categories join xar_categories_linkage on xar_categories_linkage.xar_cid = xar_categories.xar_cid where xar_categories_linkage.xar_iid = {}""".format(article_id)
+                cursor2.execute(cat_sql)
+                article["category-id"] = []
+                article["category-name"] = []
+                for row2 in cursor2.fetchall():
+                    article["category-id"].append(row2[0])
+                    article["category-name"].append(row2[1])
+
+                outfile = pathlib.Path(args.outputdir, args.pubtype, "{:05}.json".format(article_id))
+                outfile.parent.mkdir(parents=True, exist_ok=True)
+                with outfile.open('w') as f:
+                    json.dump(article, f, ensure_ascii=False, sort_keys=True, indent=4)
+                cursor2.close()
+        except Exception as err:
+            print("No articles read: {}.".format(err), file=sys.stderr)
+            sys.exit(1)
+    except Exception as err:
+        print("Database access failed: {}".format(err), file=sys.stderr)
+        sys.exit(1)
+    sys.exit(0)
+
+if __name__ == "__main__":
+    main()
+
+# Local Variables:
+# mode: Python
+# End:
