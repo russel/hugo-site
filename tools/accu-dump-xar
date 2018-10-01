@@ -59,12 +59,47 @@ select xar_name, xar_description from xar_categories join xar_categories_linkage
         print("No articles read: {}.".format(err), file=sys.stderr)
         sys.exit(1)
 
+def dump_bookreviews(db, outputdir):
+    cursor = db.cursor()
+    article_sql = """\
+select xar_rid, xar_title, xar_author, xar_isbn, xar_publisher, xar_pages, xar_price, xar_recommend, xar_rectext, xar_reviewer, xar_cvu, xar_subject, xar_review, xar_created, xar_modified
+from xar_bookreviews"""
+    try:
+        cursor.execute(article_sql)
+        for row in cursor.fetchall():
+            review = {
+                "id": row[0],
+                "title": row[1],
+                "author": row[2],
+                "isbn": row[3],
+                "publisher": row[4],
+                "pages": row[5],
+                "price": row[6],
+                "rating": row[7],
+                "summary": row[8],
+                "reviewer": row[9],
+                "cvu": row[10],
+                "subject": row[11],
+                "review": row[12],
+                "created": row[13].isoformat(),
+                "modified": row[14].isoformat()
+            }
+            review_id = row[0]
+            outfile = pathlib.Path(outputdir, 'bookreviews', "{:05}.json".format(review_id))
+            outfile.parent.mkdir(parents=True, exist_ok=True)
+            with outfile.open('w') as f:
+                json.dump(review, f, ensure_ascii=False, sort_keys=True, indent=4)
+    except Exception as err:
+        print("No book reviews read: {}.".format(err), file=sys.stderr)
+        sys.exit(1)
+
 def main():
     parser = argparse.ArgumentParser(description='dump Xaraya articles to JSON')
     parser.add_argument('--pubtype', dest='pubtype', action='store',
                         choices=['news', 'docs', 'weblinks',
                                  'pdf', 'epub',
-                                 'blogs', 'journals'], default='journals',
+                                 'blogs', 'journals',
+                                 'bookreviews'], default='journals',
                         help='type of publication', metavar='PUBTYPE')
     parser.add_argument('--host', dest='host',
                         action='store', default='localhost',
@@ -83,7 +118,10 @@ def main():
 
     try:
         db = pymysql.connect(args.host, 'accuorg_xarad', args.password, 'accuorg_xar')
-        dump_articles(db, args.outputdir, args.pubtype, pubtypes[args.pubtype])
+        if args.pubtype == 'bookreviews':
+            dump_bookreviews(db, args.outputdir)
+        else:
+            dump_articles(db, args.outputdir, args.pubtype, pubtypes[args.pubtype])
     except Exception as err:
         print("Database access failed: {}".format(err), file=sys.stderr)
         sys.exit(1)
