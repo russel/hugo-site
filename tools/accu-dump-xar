@@ -93,12 +93,50 @@ from xar_bookreviews"""
         print("No book reviews read: {}.".format(err), file=sys.stderr)
         sys.exit(1)
 
+def dump_pages(db, outputdir, pagetype, pagetypeid):
+    propids = { 26: "body", 27: "page-title", 30: "menu-title",
+                28: "page-title", 29: "body", 31: "menu-title", 46: "block" }
+    cursor = db.cursor()
+    page_sql = """\
+select xar_pid, xar_name, xar_desc
+from xar_xarpages_pages
+where xar_status = 'ACTIVE' and xar_itemtype={pagetypeid}""".format(pagetypeid=pagetypeid)
+    try:
+        cursor.execute(page_sql)
+        for row in cursor.fetchall():
+            page = {
+                "id": row[0],
+                "name": row[1],
+                "description": row[2]
+            }
+            page_id = row[0]
+            cursor2 = db.cursor()
+            dyndata_sql = """\
+select xar_dd_propid, xar_dd_value
+from xar_dynamic_data
+where xar_dd_itemid={}""".format(page_id)
+            cursor2.execute(dyndata_sql)
+            for row2 in cursor2.fetchall():
+                if row2[0] in propids:
+                    page[propids[row2[0]]] = row2[1]
+
+            outfile = pathlib.Path(outputdir, pagetype, "{:05}.json".format(page_id))
+            outfile.parent.mkdir(parents=True, exist_ok=True)
+            with outfile.open('w') as f:
+                json.dump(page, f, ensure_ascii=False, sort_keys=True, indent=4)
+            cursor2.close()
+    except Exception as err:
+        print("No articles read: {}.".format(err), file=sys.stderr)
+        sys.exit(1)
+
+
 def main():
     parser = argparse.ArgumentParser(description='dump Xaraya articles to JSON')
     parser.add_argument('--pubtype', dest='pubtype', action='store',
                         choices=['news', 'docs', 'weblinks',
                                  'pdf', 'epub',
                                  'blogs', 'journals',
+                                 'accupages', 'conferencepages',
                                  'bookreviews'], default='journals',
                         help='type of publication', metavar='PUBTYPE')
     parser.add_argument('--host', dest='host',
@@ -116,10 +154,14 @@ def main():
                  "pdf": 14, "epub": 16,
                  "blogs": 10, "journals": 13 }
 
+    pagetypes = { "accupages": 3, "conferencepages": 4 }
+
     try:
         db = pymysql.connect(args.host, 'accuorg_xarad', args.password, 'accuorg_xar')
         if args.pubtype == 'bookreviews':
             dump_bookreviews(db, args.outputdir)
+        elif args.pubtype.endswith('pages'):
+            dump_pages(db, args.outputdir, args.pubtype, pagetypes[args.pubtype])
         else:
             dump_articles(db, args.outputdir, args.pubtype, pubtypes[args.pubtype])
     except Exception as err:
