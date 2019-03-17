@@ -1,0 +1,89 @@
+#!/usr/bin/python3
+#
+# accu-bib <bib file>
+#
+# Read journal bib files.
+
+import argparse
+import sys
+
+class Error(Exception):
+    """Base class for exceptions in this module."""
+    pass
+
+class BibSyntaxError(Error):
+    """Exception raised for errors in a bib file.
+
+    Attributes:
+        lineno -- line number of line with error
+        line -- line content with error
+        message -- explanation of the error
+    """
+
+    def __init__(self, lineno, line, message):
+        self.lineno = lineno
+        self.line = line
+        self.message = message
+
+def readbib(f):
+    articles = []
+    in_article = False
+    line_no = 0
+    for l in f.readlines():
+        line_no = line_no + 1
+        l = l.strip()
+        if not l:
+           continue
+        if l[0] == '%':
+           continue
+        if l == '}':
+           if in_article:
+               in_article = False
+               articles.append(article)
+               continue
+           else:
+               raise BibSyntaxError(line_no, l, "'}' outside article definition")
+        if l == '@Article{':
+            if not in_article:
+                in_article = True
+                article = {}
+                article['author'] = []
+                continue
+            else:
+                raise BibSyntaxError(line_no, l, "'@Article{' inside article definition")
+
+        if not in_article:
+            raise BibSyntaxError(line_no, l, "Not in article definition")
+
+        key, val = l.split('=', 1)
+        key = key.strip().lower()
+        val = val.strip()
+        if key == 'author':
+            article[key].append(val)
+        elif key in article:
+            raise BibSyntaxError(line_no, l, "Value already specified")
+        else:
+            article[key] = val
+    if in_article:
+        raise BibSyntaxError(line_no + 1, "", "End of file inside article")
+    return articles
+
+def main():
+    parser = argparse.ArgumentParser(description='read ACCU bib file')
+    parser.add_argument('bibfile')
+    args = parser.parse_args()
+    try:
+        with open(args.bibfile, 'r', encoding='utf-8') as f:
+            articles = readbib(f)
+    except UnicodeDecodeError:
+        with open(args.bibfile, 'r', encoding='cp1252') as f:
+            articles = readbib(f)
+    print(articles)
+    sys.exit(0)
+
+if __name__ == "__main__":
+    main()
+
+# Local Variables:
+# mode: Python
+# End:
