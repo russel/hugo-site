@@ -1,0 +1,30 @@
+= Sample template.
+
+{#
+This is a sample template for accu-bib. accu-bib uses the Jinja2 templating
+engine. You can read the documentation for Jinja2 at http://jinja.pocoo.org/docs.
+
+This is a template comment.
+#}
+
+{% for article in articles %}
+== {{ article.title }}
+
+{{ article.note }}
+
+{% for author in article.author %}
+Author {{ author }}
+{% endfor %}
+
+Journal {{ article.journal }}, Volume {{ article.volume }}, Number {{ article.number }}
+Date {{ article.month }} {{ article.year }}
+
+{% if article.url %}
+{{ article.url }}[URL]
+{% endif %}
+
+{% if article.pdf %}
+PDF file {{ article.pdf }}
+{% endif %}
+
+{% endfor %}

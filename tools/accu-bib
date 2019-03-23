@@ -5,7 +5,10 @@
 # Read journal bib files.
 
 import argparse
+import os.path
 import sys
+
+import jinja2
 
 class Error(Exception):
     """Base class for exceptions in this module."""
@@ -71,6 +74,9 @@ def readbib(f):
 def main():
     parser = argparse.ArgumentParser(description='read ACCU bib file')
     parser.add_argument('bibfile')
+    parser.add_argument('-t', '--template', dest='template',
+                        action='store', required=True,
+                        help='output template', metavar='TEMPLATE')
     args = parser.parse_args()
     try:
         with open(args.bibfile, 'r', encoding='utf-8') as f:
@@ -78,7 +84,13 @@ def main():
     except UnicodeDecodeError:
         with open(args.bibfile, 'r', encoding='cp1252') as f:
             articles = readbib(f)
-    print(articles)
+
+    # Capture our current directory
+    THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+
+    j2 = jinja2.Environment(loader=jinja2.FileSystemLoader(THIS_DIR),
+                            trim_blocks=True, lstrip_blocks=True)
+    print(j2.get_template(args.template).render(articles=articles));
     sys.exit(0)
 
 if __name__ == "__main__":
