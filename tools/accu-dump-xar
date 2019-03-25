@@ -12,6 +12,9 @@ import sys
 
 import pymysql
 
+def toutf8(s):
+    return s.encode('latin1').decode('utf-8')
+
 def dump_articles(db, outputdir, pubtype, pubtypeid):
     propids = { 96: "keywords", 97: "author", 98: "author-email",
                 99: "author2", 100: "author2-email" }
@@ -26,9 +29,9 @@ where xar_pubtypeid={pubtypeid}""".format(pubtypeid=pubtypeid)
         for row in cursor.fetchall():
             article = {
                 "id": row[0],
-                "title": row[1],
-                "summary": row[2],
-                "body": row[3],
+                "title": toutf8(row[1]),
+                "summary": toutf8(row[2]),
+                "body": toutf8(row[3]),
                 "date": datetime.datetime.fromtimestamp(row[4]).isoformat()
             }
             article_id = row[0]
@@ -69,18 +72,18 @@ from xar_bookreviews"""
         for row in cursor.fetchall():
             review = {
                 "id": row[0],
-                "title": row[1],
-                "author": row[2],
-                "isbn": row[3],
-                "publisher": row[4],
-                "pages": row[5],
-                "price": row[6],
-                "rating": row[7],
-                "summary": row[8],
-                "reviewer": row[9],
-                "cvu": row[10],
-                "subject": row[11],
-                "review": row[12],
+                "title": toutf8(row[1]),
+                "author": toutf8(row[2]),
+                "isbn": toutf8(row[3]),
+                "publisher": toutf8(row[4]),
+                "pages": toutf8(row[5]),
+                "price": toutf8(row[6]),
+                "rating": toutf8(row[7]),
+                "summary": toutf8(row[8]),
+                "reviewer": toutf8(row[9]),
+                "cvu": toutf8(row[10]),
+                "subject": toutf8(row[11]),
+                "review": toutf8(row[12]),
                 "created": row[13].isoformat(),
                 "modified": row[14].isoformat()
             }
@@ -106,8 +109,8 @@ where xar_status = 'ACTIVE' and xar_itemtype={pagetypeid}""".format(pagetypeid=p
         for row in cursor.fetchall():
             page = {
                 "id": row[0],
-                "name": row[1],
-                "description": row[2]
+                "name": toutf8(row[1]),
+                "description": toutf8(row[2])
             }
             page_id = row[0]
             cursor2 = db.cursor()
@@ -157,7 +160,7 @@ def main():
     pagetypes = { "accupages": 3, "conferencepages": 4 }
 
     try:
-        db = pymysql.connect(args.host, 'accuorg_xarad', args.password, 'accuorg_xar')
+        db = pymysql.connect(args.host, 'accuorg_xarad', args.password, 'accuorg_xar', charset='latin1')
         if args.pubtype == 'bookreviews':
             dump_bookreviews(db, args.outputdir)
         elif args.pubtype.endswith('pages'):
