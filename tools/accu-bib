@@ -6,9 +6,12 @@
 
 import argparse
 import os.path
+import pathlib
 import sys
 
 import jinja2
+
+import accuwebsite
 
 class Error(Exception):
     """Base class for exceptions in this module."""
@@ -71,6 +74,12 @@ def readbib(f):
         raise BibSyntaxError(line_no + 1, "", "End of file inside article")
     return articles
 
+def fixup_article(article):
+    url = pathlib.Path(article['url'])
+    if url.name.isdigit():
+        article['linkurl'] = accuwebsite.link_path(url.name)
+    article['url'] = accuwebsite.article_path('cvu', article['year'], article['month'], article['title'])
+
 def main():
     parser = argparse.ArgumentParser(description='read ACCU bib file')
     parser.add_argument('bibfile')
@@ -87,6 +96,9 @@ def main():
 
     # Capture our current directory
     THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+
+    for art in articles:
+        fixup_article(art)
 
     j2 = jinja2.Environment(loader=jinja2.FileSystemLoader(THIS_DIR),
                             trim_blocks=True, lstrip_blocks=True)

@@ -22,6 +22,9 @@ Date {{ article.month }} {{ article.year }}
 {% if article.url %}
 {{ article.url }}[URL]
 {% endif %}
+{% if article.linkurl %}
+{{ article.linkurl }}[OldLink]
+{% endif %}
 
 {% if article.pdf %}
 PDF file {{ article.pdf }}
