@@ -75,10 +75,12 @@ class BaseOutput:
         raise ConversionError('Unknown Tag {}'.format(tag.name))
 
 class AdocOutput(BaseOutput):
-    def __init__(self, title=None, author=None):
+    def __init__(self, title=None, author=None, summary=None, includebio=False):
         self.title = title
         self.author = author
+        self.summary = summary
         self.bio = None
+        self.includebio = includebio
         self.ul_level = 1
         self.ol_level = 1
         self.table_level = -1
@@ -144,7 +146,8 @@ class AdocOutput(BaseOutput):
         elif self.has_class(tag, 'blockquote'):
             return self.blockquote(tag)
         elif self.has_class(tag, 'Byline'):
-            return ['\n\n[.lead]\n'] + self.trim(self.convert_children(tag))
+            self.summary = self.trim(self.convert_children(tag))
+            return []
         elif self.has_class(tag, 'bibliomixed'):
             # These are a single reference. The first child is the anchor.
             # This is followed by text starting with the reference '[n]',
@@ -338,10 +341,12 @@ class AdocOutput(BaseOutput):
         """ Convert the document and return the converted text."""
         body = self.convert(soup)
         res = [ '= {title}\n'.format(title=self.title) ]
+        if self.summary:
+            res = res + [ '\n\n[.lead]\n'] + self.summary
         if self.author:
             res = res + [ ':author: {author}\n'.format(author=self.author) ]
         res = res + [ ':imagesdir: https://accu.org/content/images/\n:figure-caption!:\n' ] + body
-        if self.bio:
+        if self.bio and self.includebio:
             res = res + self.bio
         return ''.join(res)
 
@@ -370,7 +375,7 @@ class HtmlOutput(BaseOutput):
         return ''.join(res)
 
 # Helper functions for standard conversions.
-def convert_article(source, inputformat, outputformat, title, author):
+def convert_article(source, inputformat, outputformat, title, author, summary, includebio=False):
     """convert XML or HTML article input to adoc or HTML.
 
        source: input data - file or string.
@@ -387,7 +392,7 @@ def convert_article(source, inputformat, outputformat, title, author):
         "html": "lxml"
         }
     outputs = {
-        "adoc": AdocOutput(title=title, author=author),
+        "adoc": AdocOutput(title=title, author=author, summary=summary, includebio=includebio),
         "html": HtmlOutput()
     }
 

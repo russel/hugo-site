@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 #
-# accu-xml-tool [--html] [--adoc] [XML/HTML file]
+# accu-xml-tool [--html] [--adoc] XML/HTML file
 #
 # Convert an input HTML or XML file in ACCU style to AsciiDoc
 # (the default) or HTML.
@@ -27,13 +27,19 @@ def main():
     parser.add_argument('-a', '--author', dest='author',
                         action='store', default=None,
                         help='article author', metavar='AUTHOR')
+    parser.add_argument('-s', '--summary', dest='summary',
+                        action='store', default=None,
+                        help='article summary', metavar='SUMMARY')
+    parser.add_argument('-b', '--include-bio', dest='includebio',
+                        action='store_true',
+                        help='include author bio, if present')
     parser.add_argument('input', type=argparse.FileType('r'),
                         help='input XML or HTML file',
                         metavar='XML/HTML file')
     args = parser.parse_args()
 
     try:
-        text = accuwebsite.convert_article(args.input, args.input_format, args.output_format, args.title, args.author)
+        text = accuwebsite.convert_article(args.input, args.input_format, args.output_format, args.title, args.author, args.summary, args.includebio)
         print(text)
         sys.exit(0)
     except accuwebsite.ConversionError as e:
