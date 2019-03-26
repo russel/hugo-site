@@ -86,6 +86,15 @@ def main():
     parser.add_argument('-t', '--template', dest='template',
                         action='store', required=True,
                         help='output template', metavar='TEMPLATE')
+    parser.add_argument('-s', '--sort',
+                        dest='sort', action='store',
+                        choices=['author', 'title'],
+                        default=None,
+                        help='sort order, specify \'author\' or \'title\'',
+                        metavar='SORT')
+    parser.add_argument('--sort-reverse', dest='sortreverse',
+                        action='store_true', default=False,
+                        help='reverse sort order')
     args = parser.parse_args()
     try:
         with open(args.bibfile, 'r', encoding='utf-8') as f:
@@ -99,6 +108,13 @@ def main():
 
     for art in articles:
         fixup_article(art)
+
+    if args.sort:
+        if args.sort == 'author':
+            sortfunc = lambda a: a[args.sort][0]
+        else:
+            sortfunc = lambda a: a[args.sort]
+        articles.sort(key=sortfunc, reverse=args.sortreverse)
 
     j2 = jinja2.Environment(loader=jinja2.FileSystemLoader(THIS_DIR),
                             trim_blocks=True, lstrip_blocks=True)
