@@ -31,7 +31,7 @@ class BibSyntaxError(Error):
         self.line = line
         self.message = message
 
-def readbib(f):
+def readbib(f, volume=None, number=None):
     articles = []
     in_article = False
     line_no = 0
@@ -45,6 +45,10 @@ def readbib(f):
         if l == '}':
            if in_article:
                in_article = False
+               if volume and article['volume'] != volume:
+                   continue
+               if number and article['number'] != number:
+                   continue
                articles.append(article)
                continue
            else:
@@ -95,10 +99,16 @@ def main():
     parser.add_argument('--sort-reverse', dest='sortreverse',
                         action='store_true', default=False,
                         help='reverse sort order')
+    parser.add_argument('-N', '--number', dest='number',
+                        action='store', default=None,
+                        help='restrict to journal number', metavar='NUMBER')
+    parser.add_argument('-V', '--volume', dest='volume',
+                        action='store', default=None,
+                        help='restrict to journal volume', metavar='VOLUME')
     args = parser.parse_args()
     try:
         with open(args.bibfile, 'r', encoding='utf-8') as f:
-            articles = readbib(f)
+            articles = readbib(f, args.volume, args.number)
     except UnicodeDecodeError:
         with open(args.bibfile, 'r', encoding='cp1252') as f:
             articles = readbib(f)
