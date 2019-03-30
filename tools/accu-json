@@ -16,7 +16,7 @@ import sys
 import accuwebsite
 
 def read_json(fname):
-    journal_re = re.compile(r'(?P<name>\w+)\s*Journal.*\- (?P<month>.*) (?P<year>\d+)')
+    journal_re = re.compile(r'(?P<name>\w+)\s*Journal.*\- (?P<month>.*)\s*(?P<year>\d{4})')
     issue_re = re.compile(r'o?\d+')
     month_abbrev = {
         'Jan': 'January',
@@ -32,6 +32,21 @@ def read_json(fname):
         'Nov': 'November',
         'Dec': 'December'
         }
+    id_fixups = {
+        # Overload test issue 1
+        1805: ('Overload', '2013', 'July'),
+        1806: ('Overload', '2013', 'July'),
+        1807: ('Overload', '2013', 'July'),
+        1808: ('Overload', '2013', 'July'),
+
+        # Overload test issue 2
+        1821: ('Overload', '2014', 'January'),
+        1822: ('Overload', '2014', 'January'),
+        1823: ('Overload', '2014', 'January'),
+
+        # Article in Overload April 2010
+        1623: ('Overload', '2010', 'April'),
+        }
     with open(fname) as f:
         article = json.load(f)
     res = dict()
@@ -42,7 +57,7 @@ def read_json(fname):
     # body instead. Formatting can be fixed up manually if necessary.
     if 'summary' in article and article['summary']:
         if article['summary'][0] == '<':
-            res['body'] = article['summary'] + '\n' + article['body']
+            res['Body'] = article['summary'] + '\n' + article['body']
         else:
             res['Note'] = article['summary']
     if 'author' in article:
@@ -66,11 +81,14 @@ def read_json(fname):
             res['Month'] = month_abbrev[match.group('month')[0:3]]
         else:
             res['CategoryName'] = cname
+    if article['id'] in id_fixups:
+        fixup = id_fixups[article['id']]
+        res['Journal'] = fixup[0]
+        res['Year'] = fixup[1]
+        res['Month'] = fixup[2]
     return res
 
 def print_bib(args):
-    journal_re = re.compile(r'(?P<name>.*)\s*Journal.*\- (?P<month>.*) (?P<year>\d+)')
-    issue_re = re.compile(r'o?\d+')
     # Process in reverse order, to try to get the newest first.
     flist = []
     for fname in args.input:
@@ -82,8 +100,11 @@ def print_bib(args):
         print('@Article{')
         for s in ['Id', 'Title', 'Author', 'Note', 'Journal', 'Month', 'Year', 'CategoryID', 'CategoryName']:
             if s in article:
-                print('  {}={}'.format(s, article[s]))
-        print('}')
+                val = article[s]
+                if isinstance(val, str):
+                    val = val.replace('\r\n', '\\n').replace('\n', '\\n')
+                print('  {}={}'.format(s, val))
+        print('}\n')
 
 def main():
     parser = argparse.ArgumentParser(description='process Xaraya articles dumped to JSON')
