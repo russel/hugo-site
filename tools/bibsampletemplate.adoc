@@ -10,24 +10,24 @@ This is a template comment.
 {% for article in articles %}
 == {{ article.title }}
 
-{{ article.note }}
+{{ article.Note }}
 
-{% for author in article.author %}
+{% for author in article.Author %}
 Author {{ author }}
 {% endfor %}
 
-Journal {{ article.journal }}, Volume {{ article.volume }}, Number {{ article.number }}
-Date {{ article.month }} {{ article.year }}
+Journal {{ article.Journal }}, Volume {{ article.Volume }}, Number {{ article.Number }}
+Date {{ article.Month }} {{ article.Year }}
 
-{% if article.url %}
+{% if article.URL %}
 {{ article.url }}[URL]
 {% endif %}
-{% if article.linkurl %}
-{{ article.linkurl }}[OldLink]
+{% if article.linkURL %}
+{{ article.linkURL }}[OldLink]
 {% endif %}
 
-{% if article.pdf %}
-PDF file {{ article.pdf }}
+{% if article.PDF %}
+PDF file {{ article.PDF }}
 {% endif %}
 
 {% endfor %}

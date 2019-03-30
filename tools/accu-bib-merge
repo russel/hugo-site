@@ -1,0 +1,80 @@
+#!/usr/bin/python3
+#
+# accu-bib-merge <primary bib file> <secondary bib file>
+#
+# Merge journal bib files.
+
+import argparse
+import sys
+import traceback
+
+import accuwebsite
+
+def printbibkeyval(key, val):
+    if val:
+        print('  {key}={val}'.format(key=key, val=val))
+
+def printbib(bib):
+    for article in bib:
+        print('@Article{')
+        for key, val in article.items():
+            if isinstance(val, str):
+                printbibkeyval(key, val)
+            else:
+                for item in val:
+                    printbibkeyval(key, item)
+        print('}\n')
+
+def findbibentry(bib, metadata):
+    for index, article in enumerate(bib):
+        if 'Id' in article and 'Id' in metadata and \
+           article['Id'] == metadata['Id']:
+            return index
+        if article['Journal'] == metadata['Journal'] and \
+           article['Year'] == metadata['Year'] and \
+           article['Month'] == metadata['Month'] and \
+           article['Title'] == metadata['Title']:
+            return index
+    return None
+
+def mergebibentry(bib, idx, metadata):
+    for key, val in metadata.items():
+        if not key in bib[idx]:
+            bib[idx][key] = val
+
+def mergebib(bib, metadata):
+    idx = findbibentry(bib, metadata)
+    if idx:
+        mergebibentry(bib, idx, metadata)
+    else:
+        bib.append(metadata)
+
+def main():
+    parser = argparse.ArgumentParser(description='merge ACCU bib files')
+    parser.add_argument('bibfile', nargs='+')
+    args = parser.parse_args()
+
+    try:
+        with open(args.bibfile[0], 'r', encoding='utf-8') as f:
+            bib = accuwebsite.readbib(f)
+
+        for m in args.bibfile[1:]:
+            with open(m, 'r', encoding='utf-8') as f:
+                mbib = accuwebsite.readbib(f)
+            for article in mbib:
+                mergebib(bib, article)
+        printbib(bib)
+        sys.exit(0)
+    except Exception as e:
+        print('Exception {exc} ({args})'.format(
+            exc=type(e).__name__,
+            args=str(e)))
+        traceback.print_tb(sys.exc_info()[2])
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()
+
+# Local Variables:
+# mode: Python
+# End:

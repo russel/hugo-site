@@ -88,6 +88,8 @@ class AdocOutput(BaseOutput):
         self.table_delim_start = ['[separator=¦]\n|===', '!===']
         self.table_delim_end = ['|===', '!===']
         self.list_item = []
+        self.image_rename = []
+        self.image_index = 0
         self.in_pre = False
         self.in_biblio_ref = False
         self.in_biblio_re = re.compile(r'\[.+?\]\s*(?P<ref>.*)')
@@ -409,14 +411,17 @@ def convert_article(source, inputformat, outputformat, title, author, summary, i
     return outfmt.convert_document(soup)
 
 # Standard path (URL part after site) generators
+def article_dir(journal, year, month):
+    return pathlib.Path("journal") / journal.casefold() / year / month[0:3].casefold()
+
 def article_path(journal, year, month, title):
-    p = pathlib.Path("journal") / journal.casefold() / year / month.casefold()
+    p = article_dir(journal, year, month)
     fname = ""
     for c in title.casefold():
         if c.isspace():
             fname += "_"
             continue
-        if c.isalnum():
+        if c.isalnum() and c.isascii():
             fname += c
         continue
     p = p / fname
@@ -425,3 +430,64 @@ def article_path(journal, year, month, title):
 def link_path(linkno):
     p = pathlib.Path("journal") / "index" / linkno
     return str(p)
+
+# Bibliography stuff
+class BibSyntaxError(Exception):
+    """Exception raised for errors in a bib file.
+
+    Attributes:
+        lineno -- line number of line with error
+        line -- line content with error
+        message -- explanation of the error
+    """
+
+    def __init__(self, lineno, line, message):
+        self.lineno = lineno
+        self.line = line
+        self.message = message
+
+def readbib(f, volume=None, number=None):
+    articles = []
+    in_article = False
+    line_no = 0
+    for l in f.readlines():
+        line_no = line_no + 1
+        l = l.strip()
+        if not l:
+           continue
+        if l[0] == '%':
+           continue
+        if l == '}':
+           if in_article:
+               in_article = False
+               if volume and article['Volume'] != volume:
+                   continue
+               if number and article['Number'] != number:
+                   continue
+               articles.append(article)
+               continue
+           else:
+               raise BibSyntaxError(line_no, l, "'}' outside article definition")
+        if l == '@Article{':
+            if not in_article:
+                in_article = True
+                article = {}
+                article['Author'] = []
+                continue
+            else:
+                raise BibSyntaxError(line_no, l, "'@Article{' inside article definition")
+
+        if not in_article:
+            raise BibSyntaxError(line_no, l, "Not in article definition")
+
+        key, val = l.split('=', 1)
+        val = val.strip()
+        if key == 'Author':
+            article[key].append(val)
+        elif key in article:
+            raise BibSyntaxError(line_no, l, "Value already specified")
+        else:
+            article[key] = val
+    if in_article:
+        raise BibSyntaxError(line_no + 1, "", "End of file inside article")
+    return articles
