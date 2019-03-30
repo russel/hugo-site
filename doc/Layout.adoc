@@ -1,0 +1,53 @@
+= Website source layout
+
+Considerations:
+
+* Journal content may only be available to ACCU members.
+* Large binaries should be kept out of the regular Git repo. Small ones are OK.
+  So for the the purposes of journals, PDF and EPUB should be separate, but
+  images can be in the main tree.
+* Layout should be logical, clean, and it should be obvious to new maintainers or contributors
+  where contributions should go.
+* Website in repo under `accu.org`.
+* There should be a top level build file in the repo.
+** This will generate all indexes, both overall journal indexes and
+   individual issue indexes.  Indexes will be generated in `.adoc` and
+   won't be checked in. This is so indexes can be regenerated if
+   format changes.
+** It will also run the Hugo command line to generate the site content.
+
+== Basic rules
+
+* All input files are in UTF-8.
+** Old site files need conversion. `inconv` is your friend.
+
+== Journal directory structure
+
+* Each journal issue to have its own directory.
+** Directory named `content/journal/<journal name>/<year>/<month>`. Journal name and month willbe lower case. Month will be first 3 characters of month name in English.
+** Individual articles in a file named after the article title, once it has been lowercased, spaces replaced by `_` and all characters not in `[a-z0-9]` removed.
+** Articles files are `.adoc`.
+** Image files to be named with the article title (post previous processing) and a serial suffix.
+** Article files and image files are checked in to repo.
+* `journal/<journal name>` to be a subrepo. This is so the subrepo can be stored
+   in a private or public repo depending on the journal accessibility.
+* For old articles with Xaraya ID, also generate a soft link under `journals/index/<id>`.
+
+File are named after the article title rather than the author to avoid
+clashes when one author has multiple pieces per issue.
+
+== Large binaries directory structure
+
+* Each journal issue to have its own directory.
+** Directory named `assets/journal/<journal name>/<year>/<month>`.
+*** So everything under `assets` is in the same dir path as the journal content.
+*** Mount `assets` under `accu.org/static` in the Hugo tree.
+** PDF if present to be `<journal name>.pdf`.
+** EPUB if present to be `<journal name>.epub`.
+** Cover image if present to be `Cover.png/jpg`.
+
+== Journal indexes
+
+* Journal indexes are to be produced from metadata held in `.bib` files.
+* There will be one `.bib` file per journal.
+* `.bib` files to be stored at `journal/<journal name>/<journal name>.bib`.
