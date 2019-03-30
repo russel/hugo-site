@@ -1,0 +1,120 @@
+#!/usr/bin/python3
+#
+# accu-json [--bib] [--site-dir <dir>] JSON file <JSON file ....>
+#
+# Various processing of dumped JSON files.
+#
+# --bib Print bib data from JSON.
+
+import argparse
+import io
+import json
+import pathlib
+import re
+import sys
+
+import accuwebsite
+
+def read_json(fname):
+    journal_re = re.compile(r'(?P<name>\w+)\s*Journal.*\- (?P<month>.*) (?P<year>\d+)')
+    issue_re = re.compile(r'o?\d+')
+    month_abbrev = {
+        'Jan': 'January',
+        'Feb': 'February',
+        'Mar': 'March',
+        'Apr': 'April',
+        'May': 'May',
+        'Jun': 'June',
+        'Jul': 'July',
+        'Aug': 'August',
+        'Sep': 'September',
+        'Oct': 'October',
+        'Nov': 'November',
+        'Dec': 'December'
+        }
+    with open(fname) as f:
+        article = json.load(f)
+    res = dict()
+    for s in ['id', 'title', 'body']:
+        if s in article:
+            res[s.capitalize()] = article[s]
+    # Some old summaries are HTML. Don't include them, but prepend to the
+    # body instead. Formatting can be fixed up manually if necessary.
+    if 'summary' in article and article['summary']:
+        if article['summary'][0] == '<':
+            res['body'] = article['summary'] + '\n' + article['body']
+        else:
+            res['Note'] = article['summary']
+    if 'author' in article:
+        name = article['author']
+        if name:
+            # Turn 'Fred Bloggs' into 'Bloggs, Fred'.
+            np = name.rpartition(' ')
+            res['Author'] = '{}, {}'.format(np[2], np[0])
+    # Although there could be more than one category apart from
+    # the article category and the journal ID, in practice there isn't.
+    for cid in article['category-id']:
+        match = issue_re.search(cid)
+        if not match:
+            res['CategoryID'] = cid
+    for cname in article['category-name']:
+        match = journal_re.search(cname)
+        if match:
+            res['Journal'] = match.group('name')
+            res['Year'] = match.group('year')
+            # Older articles have 3 letter month abbreviations.
+            res['Month'] = month_abbrev[match.group('month')[0:3]]
+        else:
+            res['CategoryName'] = cname
+    return res
+
+def print_bib(args):
+    journal_re = re.compile(r'(?P<name>.*)\s*Journal.*\- (?P<month>.*) (?P<year>\d+)')
+    issue_re = re.compile(r'o?\d+')
+    # Process in reverse order, to try to get the newest first.
+    flist = []
+    for fname in args.input:
+        flist.insert(0, fname)
+    for fname in flist:
+        article = read_json(fname)
+        if article['Journal'] != args.journal:
+            continue
+        print('@Article{')
+        for s in ['Id', 'Title', 'Author', 'Note', 'Journal', 'Month', 'Year', 'CategoryID', 'CategoryName']:
+            if s in article:
+                print('  {}={}'.format(s, article[s]))
+        print('}')
+
+def main():
+    parser = argparse.ArgumentParser(description='process Xaraya articles dumped to JSON')
+    parser.add_argument('-j', '--journal', dest='journal',
+                        action='store',
+                        choices=['CVu', 'Overload'],
+                        required=True,
+                        help='\'CVu\' or \'Overload\'', metavar='JOURNAL')
+    parser.add_argument('-s', '--site-dir', dest='sitedir',
+                        action='store', default='.',
+                        help='site base directory', metavar='DIR')
+    parser.add_argument('--bib', dest='bib', action='store_true',
+                        help='generate bib output')
+    parser.add_argument('input', nargs='*',
+                        help='input JSON file',
+                        metavar='JSON file')
+    args = parser.parse_args()
+
+    try:
+        if args.bib:
+            print_bib(args)
+        sys.exit(0)
+    except Exception as e:
+        print('Exception {exc} ({args})'.format(
+            exc=type(e).__name__,
+            args=str(e)))
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()
+
+# Local Variables:
+# mode: Python
+# End:
