@@ -123,7 +123,7 @@ def gen_adoc(args):
             errname = pathlib.Path(fname).name
             errfile = pathlib.Path(errname + '.err.html')
             with errfile.open(mode='w') as f:
-                print('<!--\nDestination: {dest}\nTitle: {title}\nAuthor: {author}\nSummary {summary}\n-->'.format(
+                print('<!--\nDestination: {dest}\nTitle: {title}\nAuthor: {author}\nSummary: {summary}\n-->'.format(
                     dest=str(outfile),
                     title=article['Title'],
                     author=article['Author'],
