@@ -103,8 +103,8 @@ def gen_adoc(args):
         article = read_json(fname)
         if article['Journal'] != args.journal:
             continue
+        outfile = pathlib.Path(args.sitedir) / accuwebsite.article_path(article['Journal'], article['Year'], article['Month'], article['Title'])
         try:
-            outfile = pathlib.Path(args.sitedir) / accuwebsite.article_path(article['Journal'], article['Year'], article['Month'], article['Title'])
             outfile.parent.mkdir(parents=True, exist_ok=True)
             adoc = accuwebsite.convert_article(article['Body'], 'html', 'adoc', article['Title'], article['Author'], article['Note'], str(outfile.parent), args.includebio)
             outfile.write_text(adoc[0])
@@ -112,13 +112,23 @@ def gen_adoc(args):
                 for img in adoc[1]:
                     print(img)
             if 'Id' in article and article['Id']:
-                idx = pathlib.Path(args.sitedir) / 'journals' / str(article['Id'])
+                idx = pathlib.Path(args.sitedir) / 'journals' / article['Id']
                 idx.parent.mkdir(parents=True, exist_ok=True)
                 relpath = pathlib.Path('..') / outfile.relative_to(args.sitedir)
                 idx.unlink()
                 idx.symlink_to(relpath)
         except accuwebsite.ConversionError as ce:
+            # Report error, and write out .err.html file for manual work.
             print('ConversionError {} in {}'.format(ce, fname), file=sys.stderr)
+            errname = pathlib.Path(fname).name
+            errfile = pathlib.Path(errname + '.err.html')
+            with errfile.open(mode='w') as f:
+                print('<!--\nDestination: {dest}\nTitle: {title}\nAuthor: {author}\nSummary {summary}\n-->'.format(
+                    dest=str(outfile),
+                    title=article['Title'],
+                    author=article['Author'],
+                    summary=article['Note']), file=f)
+                print(article['Body'], file=f)
 
 def print_bib(args):
     # Process in reverse order, to try to get the newest first.
