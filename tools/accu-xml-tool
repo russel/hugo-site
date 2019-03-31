@@ -30,6 +30,9 @@ def main():
     parser.add_argument('-s', '--summary', dest='summary',
                         action='store', default=None,
                         help='article summary', metavar='SUMMARY')
+    parser.add_argument('-i', '--imagedir', dest='imagedir',
+                        action='store', default='',
+                        help='directory for images', metavar='IMAGEDIR')
     parser.add_argument('-b', '--include-bio', dest='includebio',
                         action='store_true',
                         help='include author bio, if present')
@@ -39,8 +42,11 @@ def main():
     args = parser.parse_args()
 
     try:
-        text = accuwebsite.convert_article(args.input, args.input_format, args.output_format, args.title, args.author, args.summary, args.includebio)
-        print(text)
+        text = accuwebsite.convert_article(args.input, args.input_format, args.output_format, args.title, args.author, args.summary, args.imagedir, args.includebio)
+        print(text[0])
+        if text[1]:
+            for img in text[1]:
+                print(img, file=sys.stderr)
         sys.exit(0)
     except accuwebsite.ConversionError as e:
         print(e, file=sys.stderr)

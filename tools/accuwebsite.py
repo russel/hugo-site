@@ -5,6 +5,30 @@
 import pathlib
 import re
 
+# Standard path (URL part after site) generators
+def article_dir(journal, year, month):
+    return pathlib.Path("journal") / journal.casefold() / year / month[0:3].casefold()
+
+def article_title_to_filename(title):
+    fname = ""
+    for c in title.casefold():
+        if c.isspace():
+            fname += "_"
+            continue
+        if c.isalnum() and c.isascii():
+            fname += c
+        continue
+    return fname
+
+def article_path(journal, year, month, title):
+    p = article_dir(journal, year, month)
+    p = p / article_title_to_filename(title)
+    return str(p) + ".adoc"
+
+def link_path(linkno):
+    p = pathlib.Path("journal") / "index" / linkno
+    return str(p)
+
 # Convert article XML or HTML to HTML or AsciiDoc.
 import bs4
 
@@ -74,9 +98,15 @@ class BaseOutput:
     def unknown_tag(self, tag):
         raise ConversionError('Unknown Tag {}'.format(tag.name))
 
+    def image_renames(self):
+        return []
+
 class AdocOutput(BaseOutput):
     def __init__(self, title=None, author=None, summary=None, includebio=False):
         self.title = title
+        self.title_filename = None
+        if title:
+            self.title_filename = article_title_to_filename(title)
         self.author = author
         self.summary = summary
         self.bio = None
@@ -108,6 +138,21 @@ class AdocOutput(BaseOutput):
         if spaces and text:
             text[0] = text[0].lstrip()
         return text
+
+    def imgpath(self, src):
+        if src.startswith('http://accu.org/'):
+            src = src.replace('http://accu.org/', '/', 1)
+        if src.startswith('/content/images/'):
+            p = pathlib.Path(src)
+            newsrc = '{title}_{idx}{suffix}'.format(
+                title=self.title_filename,
+                idx = self.image_index,
+                suffix = p.suffix)
+            self.image_index += 1
+            self.image_rename.append((src, newsrc))
+            return newsrc
+        else:
+            return src
 
     def get_string(self, s):
         if self.in_biblio_ref:
@@ -199,12 +244,13 @@ class AdocOutput(BaseOutput):
             return ['*'] + self.convert_children(tag) + ['*']
 
     def h1(self, tag):
-        self.title = ''.join(self.convert_children(tag))
+        self.title = self.trim(''.join(self.convert_children(tag)))
+        self.title_fname = article_title_to_filename(self.title)
         return []
 
     def hn(self, tag, n):
         # Any header block 'References' may have a bibliography.
-        title = self.convert_children(tag)
+        title = self.trim(self.convert_children(tag))
         hdr = '=' * n
         if ''.join(title) == 'References':
             hdr = '[bibliography]\n' + hdr
@@ -290,7 +336,7 @@ class AdocOutput(BaseOutput):
         if match:
             return [ '{prelude}\n.{id}\nimage::{img}[{id}]\n{postlude}'.format(
                 prelude=match.group('prelude'),
-                img=match.group('img'),
+                img=self.imgpath(match.group('img')),
                 id=match.group('id'),
                 postlude=match.group('postlude')) ]
         return res
@@ -332,11 +378,7 @@ class AdocOutput(BaseOutput):
         return []
 
     def img(self, tag):
-        src = tag.get('src')
-        if src.startswith('http://accu.org'):
-            src = src.replace('http://accu.org/content/images/', '', 1)
-        if src.startswith('/content/images/'):
-            src = src.replace('/content/images/', '', 1)
+        src = self.imgpath(tag.get('src'))
         return ['\nimage::{src}[]\n'.format(src=src)]
 
     def convert_document(self, soup):
@@ -347,10 +389,17 @@ class AdocOutput(BaseOutput):
             res = res + [ '\n\n[.lead]\n'] + self.summary
         if self.author:
             res = res + [ ':author: {author}\n'.format(author=self.author) ]
-        res = res + [ ':imagesdir: https://accu.org/content/images/\n:figure-caption!:\n' ] + body
+        res = res + [ ':figure-caption!:\n' ] + body
         if self.bio and self.includebio:
             res = res + self.bio
         return ''.join(res)
+
+    def image_renames(self, basedir=''):
+        res = []
+        for ren in self.image_rename:
+            p = pathlib.Path(basedir) / ren[1]
+            res.append('cp {} {}'.format(ren[0], str(p)))
+        return res
 
 class HtmlOutput(BaseOutput):
     pass
@@ -368,7 +417,7 @@ class HtmlOutput(BaseOutput):
             return [tag.prettify()]
 
     def convert_document(self, soup):
-        """ Convert the document and return the converted text."""
+        """ Convert the document and return the conversion."""
         body = self.convert(soup)
         res = ['<html>\n'] + body
         if self.bio:
@@ -377,7 +426,7 @@ class HtmlOutput(BaseOutput):
         return ''.join(res)
 
 # Helper functions for standard conversions.
-def convert_article(source, inputformat, outputformat, title, author, summary, includebio=False):
+def convert_article(source, inputformat, outputformat, title, author, summary, imagedir='', includebio=False):
     """convert XML or HTML article input to adoc or HTML.
 
        source: input data - file or string.
@@ -386,7 +435,7 @@ def convert_article(source, inputformat, outputformat, title, author, summary, i
        title: article title
        author: article author
 
-       returns converted text.
+       returns tuple of converted text and list of image renames.
 
        throws ConversionError."""
     parsers = {
@@ -408,28 +457,7 @@ def convert_article(source, inputformat, outputformat, title, author, summary, i
         raise ConversionError('outputformat must be "adoc" or "html"')
 
     soup = bs4.BeautifulSoup(source, infmt)
-    return outfmt.convert_document(soup)
-
-# Standard path (URL part after site) generators
-def article_dir(journal, year, month):
-    return pathlib.Path("journal") / journal.casefold() / year / month[0:3].casefold()
-
-def article_path(journal, year, month, title):
-    p = article_dir(journal, year, month)
-    fname = ""
-    for c in title.casefold():
-        if c.isspace():
-            fname += "_"
-            continue
-        if c.isalnum() and c.isascii():
-            fname += c
-        continue
-    p = p / fname
-    return str(p) + ".adoc"
-
-def link_path(linkno):
-    p = pathlib.Path("journal") / "index" / linkno
-    return str(p)
+    return (outfmt.convert_document(soup), outfmt.image_renames(imagedir))
 
 # Bibliography stuff
 class BibSyntaxError(Exception):
