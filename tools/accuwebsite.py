@@ -357,7 +357,7 @@ class AdocOutput(BaseOutput):
         if sidebar:
             res = res + ['\n{}\n****'.format(self.table_delim_end[self.table_level])]
         else:
-            res = res + ['\n{}'.format(self.table_delim_end[self.table_level])]
+            res = res + ['\n{}\n'.format(self.table_delim_end[self.table_level])]
         self.table_level -= 1
 
         # Look out for particular table formations and replace with
@@ -391,6 +391,15 @@ class AdocOutput(BaseOutput):
 
     def th(self, tag):
         return [' h{}'.format(self.table_cell_delim[self.table_level])] + self.convert_children(tag)
+
+    def colgroup(self, tag):
+        return []
+
+    def thead(self, tag):
+        return self.convert_children(tag)
+
+    def tbody(self, tag):
+        return self.convert_children(tag) + ['\n']
 
     def a(self, tag):
         id = tag.get('id')
