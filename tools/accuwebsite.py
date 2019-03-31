@@ -4,6 +4,7 @@
 
 import pathlib
 import re
+import urllib.parse
 
 # Standard path (URL part after site) generators
 def article_dir(journal, year, month):
@@ -459,7 +460,7 @@ class AdocOutput(BaseOutput):
         res = []
         for ren in self.image_rename:
             p = pathlib.Path(basedir) / ren[1]
-            res.append('cp ./{} {}'.format(ren[0], str(p)))
+            res.append('cp ".{}" {}'.format(urllib.parse.unquote(ren[0]).strip(), str(p)))
         return res
 
 class HtmlOutput(BaseOutput):
