@@ -12,10 +12,11 @@ import json
 import pathlib
 import re
 import sys
+import traceback
 
 import accuwebsite
 
-def read_json(fname):
+def read_json(fname, bib_format=False):
     journal_re = re.compile(r'(?P<name>\w+)\s*Journal.*\- (?P<month>.*)\s*(?P<year>\d{4})')
     issue_re = re.compile(r'o?\d+')
     month_abbrev = {
@@ -60,12 +61,19 @@ def read_json(fname):
             res['Body'] = article['summary'] + '\n' + article['body']
         else:
             res['Note'] = article['summary']
+    if not 'Note' in res:
+        res['Note'] = ''
     if 'author' in article:
         name = article['author']
         if name:
-            # Turn 'Fred Bloggs' into 'Bloggs, Fred'.
-            np = name.rpartition(' ')
-            res['Author'] = '{}, {}'.format(np[2], np[0])
+            if bib_format:
+                # Turn 'Fred Bloggs' into 'Bloggs, Fred'.
+                np = name.rpartition(' ')
+                res['Author'] = '{}, {}'.format(np[2], np[0])
+            else:
+                res['Author'] = name
+    if not 'Author' in res:
+        res['Author'] = ''
     # Although there could be more than one category apart from
     # the article category and the journal ID, in practice there isn't.
     for cid in article['category-id']:
@@ -88,13 +96,29 @@ def read_json(fname):
         res['Month'] = fixup[2]
     return res
 
+def gen_adoc(args):
+    for fname in args.input:
+        article = read_json(fname)
+        if article['Journal'] != args.journal:
+            continue
+        try:
+            outfile = pathlib.Path(args.sitedir) / accuwebsite.article_path(article['Journal'], article['Year'], article['Month'], article['Title'])
+            outfile.parent.mkdir(parents=True, exist_ok=True)
+            adoc = accuwebsite.convert_article(article['Body'], 'html', 'adoc', article['Title'], article['Author'], article['Note'], str(outfile.parent), args.includebio)
+            outfile.write_text(adoc[0])
+            if adoc[1]:
+                for img in adoc[1]:
+                    print(img)
+        except accuwebsite.ConversionError as ce:
+            print('ConversionError {} in {}'.format(ce, fname), file=sys.stderr)
+
 def print_bib(args):
     # Process in reverse order, to try to get the newest first.
     flist = []
     for fname in args.input:
         flist.insert(0, fname)
     for fname in flist:
-        article = read_json(fname)
+        article = read_json(fname, True)
         if article['Journal'] != args.journal:
             continue
         print('@Article{')
@@ -116,6 +140,8 @@ def main():
     parser.add_argument('-s', '--site-dir', dest='sitedir',
                         action='store', default='.',
                         help='site base directory', metavar='DIR')
+    parser.add_argument('--include-bio', dest='includebio',
+                        action='store_true', help='include author bio')
     parser.add_argument('--bib', dest='bib', action='store_true',
                         help='generate bib output')
     parser.add_argument('input', nargs='*',
@@ -126,11 +152,11 @@ def main():
     try:
         if args.bib:
             print_bib(args)
+        else:
+            gen_adoc(args)
         sys.exit(0)
     except Exception as e:
-        print('Exception {exc} ({args})'.format(
-            exc=type(e).__name__,
-            args=str(e)))
+        traceback.print_exc()
         sys.exit(1)
 
 if __name__ == "__main__":
