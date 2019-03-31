@@ -335,6 +335,15 @@ class AdocOutput(BaseOutput):
                 lines[i] = '+'
         return ['\n\n{} '.format(self.list_item[-1])] + ['\n'.join(lines)]
 
+    def dl(self, tag):
+        return ['\n\n'] + self.convert_children(tag) + ['\n\n']
+
+    def dt(self, tag):
+        return ['\n'] + self.convert_children(tag) + ['::\n']
+
+    def dd(self, tag):
+        return ['\n****\n'] + self.convert_children(tag) + ['\n****\n']
+
     def table(self, tag):
         self.table_level += 1
         if self.table_level >= len(self.table_cell_delim):
