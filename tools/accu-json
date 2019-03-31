@@ -113,6 +113,7 @@ def gen_adoc(args):
                 idx = pathlib.Path(args.sitedir) / 'journals' / str(article['Id'])
                 idx.parent.mkdir(parents=True, exist_ok=True)
                 relpath = pathlib.Path('..') / outfile.relative_to(args.sitedir)
+                idx.unlink()
                 idx.symlink_to(relpath)
         except accuwebsite.ConversionError as ce:
             print('ConversionError {} in {}'.format(ce, fname), file=sys.stderr)
