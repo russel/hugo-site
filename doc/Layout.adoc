@@ -25,9 +25,10 @@ Considerations:
 
 * Each journal issue to have its own directory.
 ** Directory named `content/journal/<journal name>/<year>/<month>`. Journal name and month willbe lower case. Month will be first 3 characters of month name in English.
-** Individual articles in a file named after the article title, once it has been lowercased, spaces replaced by `_` and all characters not in `[a-z0-9]` removed.
+** Individual articles in a file named after the article title, once it has been lowercased, spaces replaced by `_` and all characters not in `[a-z0-9]` removed. Any newlines in article titles are replaced with spaces.
 ** Articles files are `.adoc`.
-** Image files to be named with the article title (post previous processing) and a serial suffix.
+** Image files to be named with the article title (post previous processing) and a serial suffix
+   and stored in the issue directory.
 ** Article files and image files are checked in to repo.
 * `journal/<journal name>` to be a subrepo. This is so the subrepo can be stored
    in a private or public repo depending on the journal accessibility.
