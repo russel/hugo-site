@@ -109,7 +109,10 @@ class AdocOutput(BaseOutput):
         if title:
             self.title_filename = article_title_to_filename(title)
         self.author = author
-        self.summary = [ summary ]
+        if summary:
+            self.summary = [ summary ]
+        else:
+            self.summary = None
         self.bio = None
         self.includebio = includebio
         self.ul_level = 1
