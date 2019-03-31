@@ -109,6 +109,11 @@ def gen_adoc(args):
             if adoc[1]:
                 for img in adoc[1]:
                     print(img)
+            if 'Id' in article and article['Id']:
+                idx = pathlib.Path(args.sitedir) / 'journals' / str(article['Id'])
+                idx.parent.mkdir(parents=True, exist_ok=True)
+                relpath = pathlib.Path('..') / outfile.relative_to(args.sitedir)
+                idx.symlink_to(relpath)
         except accuwebsite.ConversionError as ce:
             print('ConversionError {} in {}'.format(ce, fname), file=sys.stderr)
 
