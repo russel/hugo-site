@@ -243,19 +243,31 @@ class AdocOutput(BaseOutput):
         return self.strong(tag)
 
     def em(self, tag):
-        return ['_'] + self.convert_children(tag) + ['_']
+        return ['_'] + self.trim(self.convert_children(tag)) + ['_']
+
+    def u(self, tag):
+        return self.em(tag)
 
     def i(self, tag):
         return self.em(tag)
 
+    def cite(self, tag):
+        return self.em(tag)
+
     def strong(self, tag):
-        return ['*'] + self.convert_children(tag) + ['*']
+        return ['*'] + self.trim(self.convert_children(tag)) + ['*']
 
     def sup(self, tag):
-        return ['^'] + self.convert_children(tag) + ['^']
+        return ['^'] + self.trim(self.convert_children(tag)) + ['^']
 
     def sub(self, tag):
-        return ['~'] + self.convert_children(tag) + ['~']
+        return ['~'] + self.trim(self.convert_children(tag)) + ['~']
+
+    def big(self, tag):
+        return self.convert_children(tag)
+
+    def footer(self, tag):
+        return ['('] + self.convert_children(tag) + [')']
 
     def span(self, tag):
         if self.has_class(tag, 'author'):
