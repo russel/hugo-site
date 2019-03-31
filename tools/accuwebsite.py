@@ -412,7 +412,7 @@ class AdocOutput(BaseOutput):
                 return ['[[[ref{id},{id}]]] '.format(id=id)]
             else:
                 # Define an anchor.
-                return ['[[ref{id},{id}]] '.format(id=id)] + self.convert_children(tag)
+                return ['\n[[ref{id},{id}]] '.format(id=id)] + self.convert_children(tag)
         href = tag.get('href')
         if href:
             if href.startswith('#[') and href.endswith(']'):
