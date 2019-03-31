@@ -343,7 +343,8 @@ class AdocOutput(BaseOutput):
         item = self.trim(self.convert_children(tag))
         lines = ''.join(item).splitlines()
         for i in range(len(lines)):
-            if not lines[i].strip():
+            l = lines[i].strip
+            if not l and l[0] != self.list_item[-1][0]:
                 lines[i] = '+'
         return ['\n\n{} '.format(self.list_item[-1])] + ['\n'.join(lines)]
 
