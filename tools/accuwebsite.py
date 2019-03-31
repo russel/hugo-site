@@ -158,6 +158,7 @@ class AdocOutput(BaseOutput):
             return src
 
     def get_string(self, s):
+        s = s.replace('\r', '')
         if self.in_biblio_ref:
             # Remove initial [?] plus spaces.
             match = self.in_biblio_re.search(s)
