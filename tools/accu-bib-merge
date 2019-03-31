@@ -66,10 +66,7 @@ def main():
         printbib(bib)
         sys.exit(0)
     except Exception as e:
-        print('Exception {exc} ({args})'.format(
-            exc=type(e).__name__,
-            args=str(e)))
-        traceback.print_tb(sys.exc_info()[2])
+        traceback.print_exc()
         sys.exit(1)
 
 if __name__ == "__main__":
