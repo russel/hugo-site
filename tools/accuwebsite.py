@@ -459,7 +459,7 @@ class AdocOutput(BaseOutput):
         res = []
         for ren in self.image_rename:
             p = pathlib.Path(basedir) / ren[1]
-            res.append('cp {} {}'.format(ren[0], str(p)))
+            res.append('cp ./{} {}'.format(ren[0], str(p)))
         return res
 
 class HtmlOutput(BaseOutput):
