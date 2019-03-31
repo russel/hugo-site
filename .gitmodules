@@ -1,3 +1,6 @@
 [submodule "themes/universal"]
 	path = accu.org/themes/universal
 	url = https://github.com/devcows/hugo-universal-theme.git
+[submodule "accu.org/content/journal/overload"]
+	path = accu.org/content/journal/overload
+	url = https://git.accu.org/jim/website-overload.git
