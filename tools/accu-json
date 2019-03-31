@@ -53,7 +53,9 @@ def read_json(fname, bib_format=False):
     res = dict()
     for s in ['id', 'title', 'body']:
         if s in article:
-            res[s.capitalize()] = article[s]
+            res[s.capitalize()] = str(article[s]).replace('\r', '')
+    if res['Title']:
+        res['Title'] = res['Title'].replace('\n', ' ')
     # Some old summaries are HTML. Don't include them, but prepend to the
     # body instead. Formatting can be fixed up manually if necessary.
     if 'summary' in article and article['summary']:
