@@ -108,7 +108,7 @@ class AdocOutput(BaseOutput):
         if title:
             self.title_filename = article_title_to_filename(title)
         self.author = author
-        self.summary = summary
+        self.summary = [ summary ]
         self.bio = None
         self.includebio = includebio
         self.ul_level = 1
@@ -140,6 +140,8 @@ class AdocOutput(BaseOutput):
         return text
 
     def imgpath(self, src):
+        if not src:
+            raise ConversionError('Image with no src tag')
         if src.startswith('http://accu.org/'):
             src = src.replace('http://accu.org/', '/', 1)
         if src.startswith('/content/images/'):
@@ -188,8 +190,21 @@ class AdocOutput(BaseOutput):
                 else:
                     quote.extend(self.convert(c))
             quote = self.trim(quote)
-            by = tag.get_text().rsplit('~ ', 1)[1].replace('\n', '')
-            return ['\n\n[quote,{by}]\n____\n'.format(by=by)] + quote + ['\n____']
+            split = tag.get_text().rsplit('~ ', 1)
+            if len(split) > 1:
+                by = split[1].replace('\n', '')
+            else:
+                # No '~ '. Check for simpler format, quote '-' author.
+                split = quote[-1].rsplit(' - ', 1)
+                if len(split) > 1:
+                    by = split[1].replace('\n', '')
+                    quote[-1] = split[0]
+                else:
+                    by = None
+            if by:
+                return ['\n\n[quote,{by}]\n____\n'.format(by=by)] + quote + ['\n____']
+            else:
+                return ['\n\n[quote]\n____\n'] + quote + ['\n____']
         elif self.has_class(tag, 'blockquote'):
             return self.blockquote(tag)
         elif self.has_class(tag, 'Byline'):
@@ -221,6 +236,9 @@ class AdocOutput(BaseOutput):
     def tt(self, tag):
         return self.code(tag)
 
+    def b(self, tag):
+        return self.strong(tag)
+
     def em(self, tag):
         return ['_'] + self.convert_children(tag) + ['_']
 
@@ -242,6 +260,12 @@ class AdocOutput(BaseOutput):
             return []
         else:
             return ['*'] + self.convert_children(tag) + ['*']
+
+    def hr(self, tag):
+        return ["\n'''\n"]
+
+    def div(self, tag):
+        return self.convert_children(tag)
 
     def h1(self, tag):
         self.title = self.trim(''.join(self.convert_children(tag)))
@@ -297,6 +321,8 @@ class AdocOutput(BaseOutput):
         return res
 
     def li(self, tag):
+        if len(self.list_item) < 1:
+            raise ConversionError('List item without enclosing list')
         # If there are blank lines in the item, replace with '+' to
         # keep everything with the current bullet.
         item = self.trim(self.convert_children(tag))
@@ -385,11 +411,12 @@ class AdocOutput(BaseOutput):
         """ Convert the document and return the converted text."""
         body = self.convert(soup)
         res = [ '= {title}\n'.format(title=self.title) ]
-        if self.summary:
-            res = res + [ '\n\n[.lead]\n'] + self.summary
         if self.author:
             res = res + [ ':author: {author}\n'.format(author=self.author) ]
-        res = res + [ ':figure-caption!:\n' ] + body
+        res = res + [ ':figure-caption!:\n' ]
+        if self.summary:
+            res = res + [ '\n\n[.lead]\n' ] + self.summary
+        res = res + body
         if self.bio and self.includebio:
             res = res + self.bio
         return ''.join(res)
