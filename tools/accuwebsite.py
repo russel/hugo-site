@@ -231,7 +231,10 @@ class AdocOutput(BaseOutput):
         return ['\n\n====\n'] + self.trim(self.convert_children(tag)) + ['\n====']
 
     def code(self, tag):
-        return ['`'] + self.convert_children(tag) + ['`']
+        if self.in_pre:
+            return self.convert_children(tag)
+        else:
+            return ['`'] + self.convert_children(tag) + ['`']
 
     def tt(self, tag):
         return self.code(tag)
