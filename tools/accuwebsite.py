@@ -2,6 +2,7 @@
 # Library code for ACCU website
 #
 
+import json
 import pathlib
 import re
 import urllib.parse
@@ -452,7 +453,7 @@ class AdocOutput(BaseOutput):
         res = [ '= {title}\n'.format(title=self.title) ]
         if self.author:
             res = res + [ ':author: {author}\n'.format(author=self.author) ]
-        res = res + [ ':figure-caption!:\n' ]
+        res = res + [ ':figure-caption!:\n:imagesdir: ..\n' ]
         if self.summary:
             res = res + [ '\n\n[.lead]\n' ] + self.summary
         res = res + body
@@ -585,3 +586,85 @@ def readbib(f, volume=None, number=None):
     if in_article:
         raise BibSyntaxError(line_no + 1, "", "End of file inside article")
     return articles
+
+# JSON file stuff
+def read_json(f, bib_author_name_format=False):
+    journal_re = re.compile(r'(?P<name>\w+)\s*Journal.*\- (?P<month>.*)\s*(?P<year>\d{4})')
+    issue_re = re.compile(r'o?\d+')
+    month_abbrev = {
+        'Jan': 'January',
+        'Feb': 'February',
+        'Mar': 'March',
+        'Apr': 'April',
+        'May': 'May',
+        'Jun': 'June',
+        'Jul': 'July',
+        'Aug': 'August',
+        'Sep': 'September',
+        'Oct': 'October',
+        'Nov': 'November',
+        'Dec': 'December'
+        }
+    id_fixups = {
+        # Overload test issue 1
+        1805: ('Overload', '2013', 'July'),
+        1806: ('Overload', '2013', 'July'),
+        1807: ('Overload', '2013', 'July'),
+        1808: ('Overload', '2013', 'July'),
+
+        # Overload test issue 2
+        1821: ('Overload', '2014', 'January'),
+        1822: ('Overload', '2014', 'January'),
+        1823: ('Overload', '2014', 'January'),
+
+        # Article in Overload April 2010
+        1623: ('Overload', '2010', 'April'),
+        }
+    article = json.load(f)
+    res = dict()
+    for s in ['id', 'title', 'body', 'date']:
+        if s in article:
+            res[s.capitalize()] = str(article[s]).replace('\r', '')
+    if res['Title']:
+        res['Title'] = res['Title'].replace('\n', ' ')
+    # Some old summaries are HTML. Don't include them, but prepend to the
+    # body instead. Formatting can be fixed up manually if necessary.
+    if 'summary' in article and article['summary']:
+        if article['summary'][0] == '<':
+            res['Body'] = article['summary'] + '\n' + article['body']
+        else:
+            res['Note'] = article['summary']
+    if not 'Note' in res:
+        res['Note'] = ''
+    if 'author' in article:
+        name = article['author']
+        if name:
+            if bib_author_name_format:
+                # Turn 'Fred Bloggs' into 'Bloggs, Fred'.
+                np = name.rpartition(' ')
+                res['Author'] = '{}, {}'.format(np[2], np[0])
+            else:
+                res['Author'] = name
+    if not 'Author' in res:
+        res['Author'] = ''
+    # Although there could be more than one category apart from
+    # the article category and the journal ID, in practice there isn't.
+    for cid in article['category-id']:
+        match = issue_re.search(cid)
+        if not match:
+            res['CategoryID'] = cid
+    for cname in article['category-name']:
+        match = journal_re.search(cname)
+        if match:
+            res['Journal'] = match.group('name')
+            res['Year'] = match.group('year')
+            # Older articles have 3 letter month abbreviations.
+            res['Month'] = month_abbrev[match.group('month')[0:3]]
+        else:
+            res['CategoryName'] = cname
+    if article['id'] in id_fixups:
+        fixup = id_fixups[article['id']]
+        res['Journal'] = fixup[0]
+        res['Year'] = fixup[1]
+        res['Month'] = fixup[2]
+    return res
