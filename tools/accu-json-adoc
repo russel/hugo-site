@@ -1,0 +1,127 @@
+#!/usr/bin/python3
+#
+# accu-json-adoc --journal <journal-name> --bib <bibfile> [--site-dir <dir>] JSON file <JSON file ....>
+#
+# Generate Hugo adoc from JSON. Write full set of Hugo front matter in YAML
+# gained from JSON and lookup in bib file.
+
+import argparse
+import io
+import pathlib
+import re
+import sys
+import textwrap
+import traceback
+
+import accuwebsite
+
+def findbibentry(bib, metadata):
+    for article in bib:
+        if 'Id' in article and 'Id' in metadata and \
+           article['Id'] == metadata['Id']:
+            return article
+        if article['Journal'] == metadata['Journal'] and \
+           article['Year'] == metadata['Year'] and \
+           article['Month'] == metadata['Month'] and \
+           article['Title'] == metadata['Title']:
+            return article
+    return None
+
+def gen_frontmatter(article, bibentry):
+    # YAML format front matter
+    res = textwrap.dedent("""\
+        title: {title}
+        author: {author}
+        date: {date}
+        draft: false
+        journals:
+        - {journal}
+        month: {month}
+        year: {year}
+        aliases:
+        - /xaraya/journals/{id}
+        """).format(
+            title=article['Title'],
+            author=article['Author'],
+            date=article['Date'],
+            journal=article['Journal'],
+            month=article['Month'],
+            year=article['Year'],
+            id=article['Id'])
+    if 'CategoryName' in article:
+        res = res + 'categories:\n- ' + article['CategoryName'] + '\n'
+    if bibentry:
+        for item in [ ('description', 'Note'),
+                      ('number', 'Number'),
+                      ('volume', 'Volume'),
+                      ('pages', 'Pages'),
+                      ('contributors', 'Author')]:
+            if item[1] in bibentry:
+                res = res + item[0] + ': ' + str(bibentry[item[1]]) + '\n'
+    return '---\n' + res + '---\n'
+
+def main():
+    parser = argparse.ArgumentParser(description='process Xaraya articles dumped to JSON')
+    parser.add_argument('-j', '--journal', dest='journal',
+                        action='store',
+                        choices=['CVu', 'Overload'],
+                        required=True,
+                        help='\'CVu\' or \'Overload\'', metavar='JOURNAL')
+    parser.add_argument('--bib', dest='bib',
+                        action='store',
+                        required=True,
+                        help='bib file with more metadata', metavar='BIBFILE')
+    parser.add_argument('-s', '--site-dir', dest='sitedir',
+                        action='store', default='.',
+                        help='site base directory', metavar='DIR')
+    parser.add_argument('--include-bio', dest='includebio',
+                        action='store_true', help='include author bio')
+    parser.add_argument('-v', '--verbose', dest='verbose',
+                        action='store_true', help='verbose output')
+    parser.add_argument('input', nargs='*',
+                        help='input JSON file',
+                        metavar='JSON file')
+    args = parser.parse_args()
+
+    try:
+        with open(args.bib) as bibf:
+            bib = accuwebsite.readbib(bibf)
+        for fname in args.input:
+            try:
+                with open(fname) as f:
+                    article = accuwebsite.read_json(f)
+                if article['Journal'] != args.journal:
+                    continue
+                if args.verbose:
+                    print(fname, file=sys.stderr)
+                frontmatter = gen_frontmatter(article, findbibentry(bib, article))
+                outfile = pathlib.Path(args.sitedir) / accuwebsite.article_path(article['Journal'], article['Year'], article['Month'], article['Title'])
+                outfile.parent.mkdir(parents=True, exist_ok=True)
+                adoc = accuwebsite.convert_article(article['Body'], 'html', 'adoc', article['Title'], article['Author'], article['Note'], str(outfile.parent), args.includebio)
+                outfile.write_text(frontmatter + adoc[0])
+                if adoc[1]:
+                    for img in adoc[1]:
+                        print(img)
+            except accuwebsite.ConversionError as ce:
+                # Report error, and write out .err.html file for manual work.
+                print('ConversionError {} in {}'.format(ce, fname), file=sys.stderr)
+                errname = pathlib.Path(fname).name
+                errfile = pathlib.Path(errname + '.err.html')
+                with errfile.open(mode='w') as f:
+                    print('<!--\nDestination: {dest}\nTitle: {title}\nAuthor: {author}\nSummary: {summary}\n-->'.format(
+                        dest=str(outfile),
+                        title=article['Title'],
+                        author=article['Author'],
+                        summary=article['Note']), file=f)
+                    print(article['Body'], file=f)
+        sys.exit(0)
+    except Exception as e:
+        traceback.print_exc()
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()
+
+# Local Variables:
+# mode: Python
+# End:

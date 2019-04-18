@@ -1,0 +1,59 @@
+#!/usr/bin/python3
+#
+# accu-json-bib [--bib] [--site-dir <dir>] JSON file <JSON file ....>
+#
+# Dump bib generated from JSON data
+
+import argparse
+import io
+import pathlib
+import re
+import sys
+import traceback
+
+import accuwebsite
+
+def print_bib(args):
+    # Process in reverse order, to try to get the newest first.
+    flist = []
+    for fname in args.input:
+        flist.insert(0, fname)
+    for fname in flist:
+        with open(fname) as f:
+            article = accuwebsite.read_json(f, True)
+        if article['Journal'] != args.journal:
+            continue
+        print('@Article{')
+        for s in ['Id', 'Title', 'Author', 'Note', 'Journal', 'Month', 'Year', 'CategoryID', 'CategoryName']:
+            if s in article:
+                val = article[s]
+                if isinstance(val, str):
+                    val = val.replace('\r\n', '\\n').replace('\n', '\\n')
+                print('  {}={}'.format(s, val))
+        print('}\n')
+
+def main():
+    parser = argparse.ArgumentParser(description='process Xaraya articles dumped to JSON')
+    parser.add_argument('-j', '--journal', dest='journal',
+                        action='store',
+                        choices=['CVu', 'Overload'],
+                        required=True,
+                        help='\'CVu\' or \'Overload\'', metavar='JOURNAL')
+    parser.add_argument('input', nargs='*',
+                        help='input JSON file',
+                        metavar='JSON file')
+    args = parser.parse_args()
+
+    try:
+        print_bib(args)
+        sys.exit(0)
+    except Exception as e:
+        traceback.print_exc()
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()
+
+# Local Variables:
+# mode: Python
+# End:
