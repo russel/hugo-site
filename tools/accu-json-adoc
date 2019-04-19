@@ -42,6 +42,7 @@ def gen_frontmatter(article, bibentry):
         author: {author}
         date: {date}
         draft: false
+        type: journal
         journals:
         - {journal}
         month: {month}
