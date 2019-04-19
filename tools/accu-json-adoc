@@ -27,6 +27,14 @@ def findbibentry(bib, metadata):
             return article
     return None
 
+def quote_string(s):
+    for c in ':-{}[]!#|>&%@"\'':
+        if c in s:
+            return '"' + s.replace('"', '\\"') + '"'
+    if s.lower() in ('yes', 'no', 'true', 'false') or s.isdigit():
+        return '"' + s + '"'
+    return s
+
 def gen_frontmatter(article, bibentry):
     # YAML format front matter
     res = textwrap.dedent("""\
@@ -39,20 +47,22 @@ def gen_frontmatter(article, bibentry):
         month: {month}
         year: {year}
         aliases:
-        - /xaraya/journals/{id}
+        - /xaraya/journals/{id}.html
         """).format(
-            title=article['Title'],
-            author=article['Author'],
+            title=quote_string(article['Title']),
+            author=quote_string(article['Author']),
             date=article['Date'],
             journal=article['Journal'],
             month=article['Month'],
             year=article['Year'],
             id=article['Id'])
     if 'CategoryName' in article:
-        res = res + 'categories:\n- ' + article['CategoryName'] + '\n'
+        res = res + 'categories:\n- ' + quote_string(article['CategoryName']) + '\n'
     if bibentry:
-        for item in [ ('description', 'Note'),
-                      ('number', 'Number'),
+        for item in [('description', 'Note')]:
+            if item[1] in bibentry:
+                res = res + item[0] + ': ' + quote_string(str(bibentry[item[1]])) + '\n'
+        for item in [ ('number', 'Number'),
                       ('volume', 'Volume'),
                       ('pages', 'Pages'),
                       ('contributors', 'Author')]:
