@@ -91,3 +91,15 @@ As at present, this will be driven from `.bib` files.
 * Journal indexes are to be produced from metadata held in `.bib` files.
 * There will be one `.bib` file per journal.
 * `.bib` files to be stored at `journal/<journal name>/<journal name>.bib`.
+
+== Restricting access
+
+The Conference website is similarly the product of a static site generator.
+It uses a small https://www.fullstackpython.com/flask.html[Flask] module
+to check if login is required and to handle the login.
+It would seem sensible to adopt a similar solution.
+
+For the immediate future, this would have to use the existing Xaraya membership database.
+At some point in the future, when all but that part of Xaraya has been replaced,
+I would be looking to move to some off-the-shelf membership management system.
+We should not be having to code for payment processors ourselves.
