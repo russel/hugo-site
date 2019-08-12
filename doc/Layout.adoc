@@ -10,11 +10,11 @@ Considerations:
   where contributions should go.
 * Website in repo under `accu.org`.
 * There should be a top level build file in the repo.
-** This will generate all indexes, both overall journal indexes and
-   individual issue indexes.  Indexes will be generated in `.adoc` and
-   won't be checked in. This is so indexes can be regenerated if
-   format changes.
-** It will also run the Hugo command line to generate the site content.
+** It will run the Hugo command line to generate the site content.
+** If necessary (see <<_journal_indexes>>), this will generate all indexes,
+   both overall journal indexes and individual issue indexes.
+   Indexes will be generated in `.adoc` and  won't be checked in.
+   This is so indexes can be regenerated if format changes.
 
 == Basic rules
 
@@ -24,15 +24,19 @@ Considerations:
 == Journal directory structure
 
 * Each journal issue to have its own directory.
-** Directory named `content/journal/<journal name>/<year>/<month>`. Journal name and month willbe lower case. Month will be first 3 characters of month name in English.
-** Individual articles in a file named after the article title, once it has been lowercased, spaces replaced by `_` and all characters not in `[a-z0-9]` removed. Any newlines in article titles are replaced with spaces.
+** Directory named `content/journal/<journal name>/<year>/<month>`.
+   Journal name and month will be lower case.
+   Month will be first 3 characters of month name in English.
+** Individual articles in a file named after the article title, once it has been lowercased,
+   spaces replaced by `_` and all characters not in `[a-z0-9]` removed.
+   Any newlines in article titles are replaced with spaces.
 ** Articles files are `.adoc`.
 ** Image files to be named with the article title (post previous processing) and a serial suffix
    and stored in the issue directory.
 ** Article files and image files are checked in to repo.
 * `journal/<journal name>` to be a subrepo. This is so the subrepo can be stored
    in a private or public repo depending on the journal accessibility.
-* For old articles with Xaraya ID, also generate a soft link under `journals/index/<id>`.
+* For old articles with Xaraya ID, also generate an HTML redirect at `journals/index/<id>`.
 
 File are named after the article title rather than the author to avoid
 clashes when one author has multiple pieces per issue.
@@ -48,6 +52,41 @@ clashes when one author has multiple pieces per issue.
 ** Cover image if present to be `Cover.png/jpg`.
 
 == Journal indexes
+
+If possible, I want to handle all journal indexing using
+https://gohugo.io/content-management/taxonomies/[Hugo taxonomies].
+This means adding taxonomy data with outher metadata in Hugo fontmatter for each article.
+For example, if we define taxonomies `journals`, `categories` and `contributors`. in
+`config.toml`, given frontmatter like the following we can hopefully use the taxonomies
+to generate indexes by author, journal, and article category
+
+--------------------------------------------------
+---
+title: Afterwood
+author: Chris Oldwood
+date: 2018-02-01T16:13:46
+draft: false
+journals:
+- Overload
+month: February
+year: 2018
+aliases:
+- /xaraya/journals/2461.html
+categories:
+- Process Topics
+description: Can you code on paper in an interview? Chris Oldwood recounts his attempts to write a calendar.
+number: 143
+volume: 26
+pages: 24
+contributors: ['Oldwood, Chris']
+---
+= Afterwood
+:author: Chris Oldwood
+--------------------------------------------------
+
+If using the taxonomy system proves too difficult, we will have to fall back on generating
+indexes separately.
+As at present, this will be driven from `.bib` files.
 
 * Journal indexes are to be produced from metadata held in `.bib` files.
 * There will be one `.bib` file per journal.
