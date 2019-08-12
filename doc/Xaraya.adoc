@@ -2,7 +2,7 @@
 
 The current (at the time of writing) ACCU website is based on a long-dead PHP5 framework,
 https://github.com/xaraya[Xaraya].
-This manages to be even more dead than AIX.
+This manages to be even more dead than AIX, and that takes some doing.
 
 Xaraya stores all its content in a MySQL database.
 As befits a flexible web framework, the schema for this database is somewhat impenetrable,
@@ -56,7 +56,7 @@ All the journal indexes are done by a system (originally due to Martin) based on
 this `.bib` file.
 
 Here's a sample `.bib` entry from the manual file:
---------------------------------------------------
+----
 @Article{
     Title=Afterwood
     Note=Can you code on paper in an interview? Chris Oldwood recounts his attempts to write a calendar.
@@ -71,10 +71,10 @@ Here's a sample `.bib` entry from the manual file:
     URL=/index.php/journals/2461
     PDF=/var/uploads/journals/Overload143.pdf#page=26
     }
---------------------------------------------------
+----
 Note that the content of the Overload and CVu `.bib` files differs slightly.
 Here's a CVu sample:
---------------------------------------------------
+----
 @Article{
     Title=Write Less Code!
     Note=Pete Goodliffe helps us avoid unnecessary lines of code.
@@ -89,17 +89,18 @@ Here's a CVu sample:
     URL=/index.php/journals/2524
     PDF=/var/uploads/journals/CVu30-3-dNn1.pdf#Page=5
     }
---------------------------------------------------
+----
 
 This file is processed by a custom tool (Bob's got a Visual Studio C++ project) that spits out
 HTML indexes.
-This is a problem for me, as
-a. I don't want to be building an executable as part of a final build chain.
-b. I especially don't want that executable to be nailed to Windows.
+This is a problem for me, as:
+[loweralpha]
+. I don't want to be building an executable as part of a final build chain.
+. I especially don't want that executable to be nailed to Windows.
 
 These indexes are all very nice, but there's a problem, in that if we consider the article
 metadata as a whole, some of it (e.g. the Xaraya ID used in the current URLs, the author
-name as presented in the article, the article title ditto, is in the Xaraya data and some of it
+name as presented in the article, the article title ditto), is in the Xaraya data and some of it
 is in the `.bib`.
 
 
@@ -113,8 +114,8 @@ This connects to MySQL and dumps out all articles of a particular
 type to individual JSON files.
 In the process it transliterates content from Latin1 to UTF-8.
 
-Here's what it produces for a sample article:
---------------------------------------------------
+Here's what it produces for a sample article (most of the body omitted):
+----
 {
     "author": "Chris Oldwood",
     "author-email": "",
@@ -135,7 +136,7 @@ Here's what it produces for a sample article:
     "summary": "Can you code on paper in an interview? Chris Oldwood recounts his attempts to write a calendar.",
     "title": "Afterwood"
 }
---------------------------------------------------
+----
 
 This can dump out journal pages, conference and general pages, and book reviews.
 
@@ -150,7 +151,7 @@ Some is a little processed.
 For example, the tool attempts to convert author names to _lastname, firstname_.
 
 Here's a sample entry from the output:
---------------------------------------------------
+----
 @Article{
   Id=2461
   Title=Afterwood
@@ -162,9 +163,9 @@ Here's a sample entry from the output:
   CategoryID=Process
   CategoryName=Process Topics
 }
---------------------------------------------------
+----
 And a sample entry for a CVu article:
---------------------------------------------------
+----
 @Article{
   Id=2524
   Title=Write Less Code!
@@ -176,7 +177,7 @@ And a sample entry for a CVu article:
   CategoryID=Design
   CategoryName=Design of applications and programs
 }
---------------------------------------------------
+----
 Attempts are made to tidy some of the above fields.
 We have an insufficiently clever go at turning _firstname lastname_ in the bib-friendly
 _lastname, firstname_.
@@ -207,7 +208,7 @@ I hope we won't end up using it.
 Given a set of JSON files and a `.bib`, this emits one file per JSON file containing the
 input article translated to AsciiDoc, with all metadata encoded as Hugo frontmatter.
 Output looks like this:
---------------------------------------------------
+----
 ---
 title: Afterwood
 author: Chris Oldwood
@@ -240,7 +241,7 @@ The interviewer slid a pencil and a sheet of A4 paper over in my direction and s
 
 This wasn’t the very start of the interview, there were a few pleasantries exchanged before cutting to the chase. In that opening introduction, I quickly learned that my interviewer did not work in my department or even my programming language of choice. His personal preference was for Java but given that this was a brand new team with only a project manager who hadn’t written a line of code in years, he was drafted in from another team to fill the void. I let out a disguised sigh of relief as I realised I wasn’t going to get quizzed about obscure {cpp} trivia.
 ...
---------------------------------------------------
+----
 
 Output files are placed in a path as outlined in link:Layout.html.
 

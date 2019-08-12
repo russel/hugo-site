@@ -71,7 +71,7 @@ For example, if we define taxonomies `journals`, `categories` and `contributors`
 `config.toml`, given frontmatter like the following we can hopefully use the taxonomies
 to generate indexes by author, journal, and article category
 
---------------------------------------------------
+----
 ---
 title: Afterwood
 author: Chris Oldwood
@@ -93,7 +93,7 @@ contributors: ['Oldwood, Chris']
 ---
 = Afterwood
 :author: Chris Oldwood
---------------------------------------------------
+----
 
 If using the taxonomy system proves too difficult, we will have to fall back on generating
 indexes separately.
