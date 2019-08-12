@@ -1,0 +1,183 @@
+= Xaraya
+
+The current (at the time of writing) ACCU website is based on a long-dead PHP5 framework,
+https://github.com/xaraya[Xaraya].
+This manages to be even more dead than AIX.
+
+Xaraya stores all its content in a MySQL database.
+As befits a flexible web framework, the schema for this database is somewhat impenetrable,
+and it's not a straightforward matter to extract the existing content.
+
+Various important and less important subsystems are handled in custom Xaraya modules.
+* The membership system. All aspects of the ACCU membership system are handled
+  here, including payment processing, renewal reminders etc.
+* Book reviews. A database and simple web frontend handle book reviews.
+* A long dead blogging system.
+* TODO: There are others - fill them in.
+
+== Existing content in Xaraya
+
+Content is stored in the Xaraya MySQL database in raw HTML using Ye Olde Latin1
+encoding.
+
+We could be content to just extract the HTML and convert it to ITF-8,
+However, this means trying to run two parallel sets of CSS, one to style
+the Xaraya HTML, and one to style the site and AsciiDoc output.
+This doesn't seem a good idea to me.
+If possible, we should attempt to convert existing content to AsciiDoc.
+
+Extracting the data from the database is unexpectedly gnarly, as each
+different type of content has different attributes in the database,
+and so requires slightly different handling to get the meat.
+
+== New content
+
+New journal content is delivered in simple XML.
+This appears to be XML exported from (at a guess) FrameMaker.
+At present, AIUI, Bob edits this to HTML and feeds it into Xaraya.
+There's a Xaraya page for doing this.
+It's basically enter article details and then cut/paste your HTML here.
+Obviously it would be a Jolly Good Thing if this XML could also be converted into
+AsciiDoc in as painless a manner as possible.
+
+Ove the years, the style of HTML has varied a bit.
+Earlier articles can be a bit random, but more recent ones seem to have fairly
+settled set of conventions.
+
+== Existing content not in Xaraya
+
+This is one important bit of content that's not in Xaraya.
+Or at least not all in Xaraya.
+Xaraya keeps its article ID, the article title, author, journal, month, year, summary
+and categories.
+Other data is stored in external `.bib` files.
+There is one `.bib` file per journal.
+All the journal indexes are done by a system (originally due to Martin) based on reading
+this `.bib` file..
+This file is processed by a custom tool (Bob's got a Visual Studio C++ project) that spits out
+HTML indexes.
+This is a problem for me, as
+a. I don't want to be building an executable as part of a final build chain.
+b. I especially don't want that executable to be nailed to Windows.
+
+These indexes are all very nice, but there's a problem, in that if we consider the article
+metadata as a whole, some of it (e.g. the Xaraya ID used in the current URLs, the author
+name as presented in the article, the article title ditto, is in the Xaraya data and some of it
+is in the `.bib`.
+
+
+== Extracting content from Xaraya
+
+To this end, I have wrangled some Python3 tooling.
+
+=== `accu-dump-xar`
+
+This connects to MySQL and dumps out all articles of a particular
+type to individual JSON files.
+In the process it transliterates content from Latin1 to UTF-8.
+
+Here's what it produces for a sample article:
+--------------------------------------------------
+{
+    "author": "Chris Oldwood",
+    "author-email": "",
+    "author2": "",
+    "author2-email": "",
+    "body": "<p>The interviewer slid a pencil ..."
+    "category-id": [
+        "o143",
+        "Process"
+    ],
+    "category-name": [
+        "Overload Journal #143 - February 2018",
+        "Process Topics"
+    ],
+    "date": "2018-02-01T16:13:46",
+    "id": 2461,
+    "keywords": "",
+    "summary": "Can you code on paper in an interview? Chris Oldwood recounts his attempts to write a calendar.",
+    "title": "Afterwood"
+}
+--------------------------------------------------
+
+This can dump out journal pages, conference and general pages, and book reviews.
+
+We end up with a whole pile of JSON files, but at least we can now see what we're dealing with.
+
+=== `accu-json-bib`
+
+Given a set of JSON files, this spits out a `.bib` file containing the metadata contains within
+the JSON.
+In other words, the metadata contained within Xaraya.
+
+=== `accu-bib-merge`
+
+Given one of the manually curated `.bib` files and a `.bib` file that's the output from
+`accu-json-bib`, this attempts to produce a single `.bib` file containing all the metadata
+from both the manual file and the Xaraya metadata.
+Some of the manual `.bib` entries contain the Xaraya article ID, in which case entries
+are matched on that.
+Otherwise we restort to trying to match on journal, year, month and title.
+
+=== `accu-bib`
+
+As indicated elsewhere, I am hoping that we can generate all required indexes using the
+Hugo taxonomies system.
+In the event that we can't, I have scratched an itch for a cross-platform replacement
+for Bob's tool.
+`accu-bib` reads `.bib` files and emits output based on an input template.
+I hope we won't end up using it.
+
+=== `accu-json-adoc`
+
+Given a set of JSON files and a `.bib`, this emits one file per JSON file containing the
+input article translated to AsciiDoc, with all metadata encoded as Hugo frontmatter.
+Output looks like this:
+--------------------------------------------------
+---
+title: Afterwood
+author: Chris Oldwood
+date: 2018-02-01T16:13:46
+draft: false
+journals:
+- Overload
+month: February
+year: 2018
+aliases:
+- /xaraya/journals/2461.html
+categories:
+- Process Topics
+description: Can you code on paper in an interview? Chris Oldwood recounts his attempts to write a calendar.
+number: 143
+volume: 26
+pages: 24
+contributors: ['Oldwood, Chris']
+---
+= Afterwood
+:author: Chris Oldwood
+:figure-caption!:
+:imagesdir: ..
+
+
+[.lead]
+Can you code on paper in an interview? Chris Oldwood recounts his attempts to write a calendar.
+
+The interviewer slid a pencil and a sheet of A4 paper over in my direction and said “I’d like you to write a little bit of code to print a calendar.” I thought to myself “that doesn’t seem too hard”.
+
+This wasn’t the very start of the interview, there were a few pleasantries exchanged before cutting to the chase. In that opening introduction, I quickly learned that my interviewer did not work in my department or even my programming language of choice. His personal preference was for Java but given that this was a brand new team with only a project manager who hadn’t written a line of code in years, he was drafted in from another team to fill the void. I let out a disguised sigh of relief as I realised I wasn’t going to get quizzed about obscure {cpp} trivia.
+...
+--------------------------------------------------
+
+Output files are placed in a path as outlined in link:Layout.html.
+
+Images are not stored in Xaraya, Instead they're in a directory hierarchy handled by
+Apache.
+If converting to AsciiDoc, `accu-json-adoc` also emits to standard output a
+list of `cp` command lines.
+These attempt to copy images from a copy of the website images directory hierarchy
+to the place in which they should reside in the new layout.
+Links in the generated AsciiDoc are set to the location in the new layout.
+
+=== `accu-xml-tool`
+
+A stand-alone tool for translating either article XML or article HTML to either AsciiDoc or HTML.
