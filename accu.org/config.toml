@@ -149,3 +149,8 @@ paginate = 10
     enable = true
     title = "Latest ACCU news"
     subtitle = ""
+
+[taxonomies]
+  journal = "journals"
+  contributor = "contributors"
+  category = "categories"
