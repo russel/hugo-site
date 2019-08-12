@@ -20,6 +20,17 @@ Considerations:
 
 * All input files are in UTF-8.
 ** Old site files need conversion. `inconv` is your friend.
+* We will use a static site generator, with AsciiDoc as the input format.
+  Markdown is also popular, but there is no universal standard and it lacks a lot of the
+  features of AsciiDoc. We would therefore risk locking ourselves in a particular generator's
+  flavour of Markdown, and hence that generator.
+** https://gohugo.io/[Hugo] is the current gorilla in the static site generator scene.
+   It's won over previous frontrunners on (as far as I can tell) merit; it's fast, for one
+   thing, though using AsciiDoc wrecks that advantage by needing to run everything
+   through https://asciidoctor.org[AsciiDoctor].
+   However, being pre-eminent means it has other advantages; a wide choice of free
+   and payware themes and theming expertise, for one.
+   There doesn't seem to me to be a good reason for not using Hugo.
 
 == Journal directory structure
 
