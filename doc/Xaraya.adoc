@@ -53,7 +53,44 @@ and categories.
 Other data is stored in external `.bib` files.
 There is one `.bib` file per journal.
 All the journal indexes are done by a system (originally due to Martin) based on reading
-this `.bib` file..
+this `.bib` file.
+
+Here's a sample `.bib` entry from the manual file:
+--------------------------------------------------
+@Article{
+    Title=Afterwood
+    Note=Can you code on paper in an interview? Chris Oldwood recounts his attempts to write a calendar.
+    Author=Oldwood, Chris
+    Journal=Overload
+    Number=143
+    Volume=26
+    Pages=24
+    Year=2018
+    Month=February
+    ISSN=1354--3172
+    URL=/index.php/journals/2461
+    PDF=/var/uploads/journals/Overload143.pdf#page=26
+    }
+--------------------------------------------------
+Note that the content of the Overload and CVu `.bib` files differs slightly.
+Here's a CVu sample:
+--------------------------------------------------
+@Article{
+    Title=Write Less Code!
+    Note=Pete Goodliffe helps us avoid unnecessary lines of code.
+    Author=Goodliffe, Pete
+    Journal=CVu
+    Number=3
+    Volume=30
+    Pages=3-6
+    Year=2018
+    Month=July
+    ISSN=1354-3164
+    URL=/index.php/journals/2524
+    PDF=/var/uploads/journals/CVu30-3-dNn1.pdf#Page=5
+    }
+--------------------------------------------------
+
 This file is processed by a custom tool (Bob's got a Visual Studio C++ project) that spits out
 HTML indexes.
 This is a problem for me, as
@@ -106,9 +143,46 @@ We end up with a whole pile of JSON files, but at least we can now see what we'r
 
 === `accu-json-bib`
 
-Given a set of JSON files, this spits out a `.bib` file containing the metadata contains within
+Given a set of JSON files, this spits out a `.bib` file containing the metadata contained within
 the JSON.
 In other words, the metadata contained within Xaraya.
+Some is a little processed.
+For example, the tool attempts to convert author names to _lastname, firstname_.
+
+Here's a sample entry from the output:
+--------------------------------------------------
+@Article{
+  Id=2461
+  Title=Afterwood
+  Author=Oldwood, Chris
+  Note=Can you code on paper in an interview? Chris Oldwood recounts his attempts to write a calendar.
+  Journal=Overload
+  Month=February
+  Year=2018
+  CategoryID=Process
+  CategoryName=Process Topics
+}
+--------------------------------------------------
+And a sample entry for a CVu article:
+--------------------------------------------------
+@Article{
+  Id=2524
+  Title=Write Less Code!
+  Author=Goodliffe, Pete
+  Note=Pete Goodliffe helps us avoid unnecessary lines of code.
+  Journal=CVu
+  Month=July
+  Year=2018
+  CategoryID=Design
+  CategoryName=Design of applications and programs
+}
+--------------------------------------------------
+Attempts are made to tidy some of the above fields.
+We have an insufficiently clever go at turning _firstname lastname_ in the bib-friendly
+_lastname, firstname_.
+We also look out for Notes (summaries) that have HTML.
+These are ignored in this tool; when the article is converted to AsciiDoc, the summary
+is put at the start of the body.
 
 === `accu-bib-merge`
 
