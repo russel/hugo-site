@@ -42,8 +42,10 @@ Considerations:
    spaces replaced by `_` and all characters not in `[a-z0-9]` removed.
    Any newlines in article titles are replaced with spaces.
 ** Articles files are `.adoc`.
-** Image files to be named with the article title (post previous processing) and a serial suffix
-   and stored in the issue directory.
+** Image files to be named with the article title (post previous processing) and a serial suffix.
+   I am dithering over whether they should go in the issue directory, or (as binary blobs)
+   the should go in the issue directory under `assets`. The article images aren't generally
+   big, but I worry about binaries.
 ** Article files and image files are checked in to repo.
 * `journal/<journal name>` to be a subrepo. This is so the subrepo can be stored
    in a private or public repo depending on the journal accessibility.
