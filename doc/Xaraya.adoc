@@ -9,6 +9,7 @@ As befits a flexible web framework, the schema for this database is somewhat imp
 and it's not a straightforward matter to extract the existing content.
 
 Various important and less important subsystems are handled in custom Xaraya modules.
+
 * The membership system. All aspects of the ACCU membership system are handled
   here, including payment processing, renewal reminders etc.
 * Book reviews. A database and simple web frontend handle book reviews.
@@ -20,7 +21,7 @@ Various important and less important subsystems are handled in custom Xaraya mod
 Content is stored in the Xaraya MySQL database in raw HTML using Ye Olde Latin1
 encoding.
 
-We could be content to just extract the HTML and convert it to ITF-8,
+We could be content to just extract the HTML and convert it to UTF-8,
 However, this means trying to run two parallel sets of CSS, one to style
 the Xaraya HTML, and one to style the site and AsciiDoc output.
 This doesn't seem a good idea to me.
