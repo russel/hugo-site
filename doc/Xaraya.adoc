@@ -244,7 +244,7 @@ This wasn’t the very start of the interview, there were a few pleasantries exc
 ...
 ----
 
-Output files are placed in a path as outlined in link:Layout.html.
+Output files are placed in a path as outlined in <<Layout.adoc#_large_binaries_directory_structure, the Layout description>>.
 
 Images are not stored in Xaraya, Instead they're in a directory hierarchy handled by
 Apache.
