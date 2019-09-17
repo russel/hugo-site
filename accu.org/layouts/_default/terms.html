@@ -1,0 +1,13 @@
+<section id="main">
+  <div>
+    <h1 id="title">{{ .Title }}</h1>
+
+    <ul>
+      {{ range .Data.Terms.Alphabetical }}
+      <li>
+        <a href="{{ .Page.Permalink }}">{{ .Page.Title }}</a>
+      </li>
+    {{ end }}
+   </ul>
+  </div>
+</section>
