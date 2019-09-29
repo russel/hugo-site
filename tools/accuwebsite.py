@@ -1,5 +1,5 @@
 #
-# Library code for ACCU website
+# Library code for ACCU website article extraction.
 #
 
 import json
