@@ -86,10 +86,10 @@ def logout():
     logout_user()
     return redirect('/')
 
-@app.route('/<string:page_name>')
+@app.route('/journal/<path:page_path>')
 @login_required
-def render_static(page_name):
-    return render_template(page_name)
+def render_static(page_path):
+    return render_template(page_path)
 
 if __name__ == '__main__':
     app.run()
