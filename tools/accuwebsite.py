@@ -130,6 +130,7 @@ class AdocOutput(BaseOutput):
         self.in_biblio_re = re.compile(r'\[.+?\]\s*(?P<ref>.*)')
         self.table_listing_re = re.compile('(?P<prelude>.*)\n\\[separator=¦\\]\n\\|===\n\s*a¦\s+(?P<src>\\[source\\]\n----\n.*?\n----)\s*\n\s*h¦(?P<id>.*?)\n\\|===\n(?P<postlude>.*)', re.DOTALL)
         self.table_image_re = re.compile('(?P<prelude>.*)\n\\[separator=¦\\]\n\\|===\n\s*a¦\s+image::(?P<img>.*?)\\[\\]\n\s*h¦(?P<id>.*?)\n\\|===\n(?P<postlude>.*)', re.DOTALL)
+        self.tidy_xref_re = re.compile(r'pass:\[\[\](?P<ref><<.*?>>)\]')
 
     # Tidy reference IDs. Make sure they don't contain characters other than
     # alphanumeric and _.
@@ -453,6 +454,10 @@ class AdocOutput(BaseOutput):
         src = self.imgpath(tag.get('src'))
         return ['\nimage::{src}[]\n'.format(src=src)]
 
+    def tidy_adoc(self, adoc):
+        # Strip any [] around an inline ref.
+        return self.tidy_xref_re.sub(lambda m: m.group('ref'), adoc)
+
     def convert_document(self, soup):
         """ Convert the document and return the converted text."""
         body = self.convert(soup)
@@ -465,7 +470,7 @@ class AdocOutput(BaseOutput):
         res = res + body
         if self.bio and self.includebio:
             res = res + self.bio
-        return ''.join(res)
+        return self.tidy_adoc(''.join(res))
 
     def image_renames(self, basedir=''):
         res = []
