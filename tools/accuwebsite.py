@@ -131,6 +131,12 @@ class AdocOutput(BaseOutput):
         self.table_listing_re = re.compile('(?P<prelude>.*)\n\\[separator=¦\\]\n\\|===\n\s*a¦\s+(?P<src>\\[source\\]\n----\n.*?\n----)\s*\n\s*h¦(?P<id>.*?)\n\\|===\n(?P<postlude>.*)', re.DOTALL)
         self.table_image_re = re.compile('(?P<prelude>.*)\n\\[separator=¦\\]\n\\|===\n\s*a¦\s+image::(?P<img>.*?)\\[\\]\n\s*h¦(?P<id>.*?)\n\\|===\n(?P<postlude>.*)', re.DOTALL)
 
+    # Tidy reference IDs. Make sure they don't contain characters other than
+    # alphanumeric and _.
+    @staticmethod
+    def tidy_ref_id(ref):
+        return "".join([c if c.isalnum() or c == '_' else '_' for c in ref])
+
     @staticmethod
     def trim(text, spaces=True):
         while text and not text[0].strip():
@@ -428,16 +434,16 @@ class AdocOutput(BaseOutput):
             if id[0] == '[' and id[-1] == ']':
                 # It's a bibliography entry. These should have no content.
                 id = id[1:-1]
-                return ['[[[ref{id},{id}]]] '.format(id=id)]
+                return ['[[[ref{id},{id}]]] '.format(id=self.tidy_ref_id(id))]
             else:
                 # Define an anchor.
-                return ['\n[[ref{id},{id}]] '.format(id=id)] + self.convert_children(tag)
+                return ['\n[[ref{id},{id}]] '.format(id=self.tidy_ref_id(id))] + self.convert_children(tag)
         href = tag.get('href')
         if href:
             if href.startswith('#[') and href.endswith(']'):
                 # It's a biblio reference. Add reference. The content should
                 # just repeat the reference.
-                return ['<<ref{ref}>>'.format(ref=href[2:-1])]
+                return ['<<ref{ref}>>'.format(ref=self.tidy_ref_id(href[2:-1]))]
             else:
                 # It's a regular link.
                 return ['link:{url}['.format(url=href)] + self.convert_children(tag) + [']']
