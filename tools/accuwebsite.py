@@ -435,10 +435,10 @@ class AdocOutput(BaseOutput):
             if id[0] == '[' and id[-1] == ']':
                 # It's a bibliography entry. These should have no content.
                 id = id[1:-1]
-                return ['[[[ref{id},{id}]]] '.format(id=self.tidy_ref_id(id))]
+                return ['[[[ref{rid},{id}]]] '.format(rid=self.tidy_ref_id(id), id=id)]
             else:
                 # Define an anchor.
-                return ['\n[[ref{id},{id}]] '.format(id=self.tidy_ref_id(id))] + self.convert_children(tag)
+                return ['\n[[ref{rid},{id}]] '.format(rid=self.tidy_ref_id(id), id=id)] + self.convert_children(tag)
         href = tag.get('href')
         if href:
             if href.startswith('#[') and href.endswith(']'):
