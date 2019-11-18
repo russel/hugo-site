@@ -187,7 +187,7 @@ class AdocOutput(BaseOutput):
 
     def p(self, tag):
         if self.has_class(tag, 'bio'):
-            self.bio = ['\n\n.{author}\n****\n'] + self.trim(self.convert_children(tag)) + ['\n****']
+            self.bio = ['\n.{author}\n****\n'] + self.trim(self.convert_children(tag)) + ['\n****\n']
             return []
         elif self.has_class(tag, 'quote'):
             # This is a bit nasty. We want the formatted text (so we include
@@ -215,9 +215,9 @@ class AdocOutput(BaseOutput):
                 else:
                     by = None
             if by:
-                return ['\n\n[quote,{by}]\n____\n'.format(by=by)] + quote + ['\n____']
+                return ['\n[quote,{by}]\n____\n'.format(by=by)] + quote + ['\n____\n']
             else:
-                return ['\n\n[quote]\n____\n'] + quote + ['\n____']
+                return ['\n[quote]\n____\n'] + quote + ['\n____\n']
         elif self.has_class(tag, 'blockquote'):
             return self.blockquote(tag)
         elif self.has_class(tag, 'Byline'):
@@ -236,12 +236,12 @@ class AdocOutput(BaseOutput):
             self.in_biblio_ref = True
             ref = self.convert_children(tag)
             self.in_biblio_ref = False
-            return ['\n\n- '] + ref
+            return ['\n- '] + ref + ['\n']
         else:
-            return ['\n\n'] + self.trim(self.convert_children(tag))
+            return ['\n'] + self.trim(self.convert_children(tag)) + ['\n']
 
     def blockquote(self, tag):
-        return ['\n\n====\n'] + self.trim(self.convert_children(tag)) + ['\n====']
+        return ['\n\n====\n'] + self.trim(self.convert_children(tag)) + ['\n====\n']
 
     def code(self, tag):
         if self.in_pre:
@@ -306,7 +306,7 @@ class AdocOutput(BaseOutput):
         hdr = '=' * n
         if ''.join(title) == 'References':
             hdr = '[bibliography]\n' + hdr
-        return [ '\n\n' + hdr + ' '] + title
+        return [ '\n' + hdr + ' '] + title + ['\n']
 
     def h2(self, tag):
         return self.hn(tag, 2)
@@ -327,7 +327,7 @@ class AdocOutput(BaseOutput):
         self.in_pre = True
         src = self.convert_children(tag)
         self.in_pre = False
-        return ['\n\n[source]\n----\n'] + self.trim(src, False) + ['\n----']
+        return ['\n\n[source]\n----\n'] + self.trim(src, False) + ['\n----\n']
 
     def br(self, tag):
         return [' +\n']
@@ -354,10 +354,12 @@ class AdocOutput(BaseOutput):
         # If there are blank lines in the item, replace with '+' to
         # keep everything with the current bullet.
         item = self.trim(self.convert_children(tag))
+        print(item)
+        return ['\n\n{} '.format(self.list_item[-1])] + item
         lines = ''.join(item).splitlines()
         for i in range(len(lines)):
-            l = lines[i].strip
-            if not l and l[0] != self.list_item[-1][0]:
+            l = lines[i].strip()
+            if not l:
                 lines[i] = '+'
         return ['\n\n{} '.format(self.list_item[-1])] + ['\n'.join(lines)]
 
@@ -435,10 +437,10 @@ class AdocOutput(BaseOutput):
             if id[0] == '[' and id[-1] == ']':
                 # It's a bibliography entry. These should have no content.
                 id = id[1:-1]
-                return ['[[[ref{rid},{id}]]] '.format(rid=self.tidy_ref_id(id), id=id)]
+                return ['[[[ref{rid},{id}]]]'.format(rid=self.tidy_ref_id(id), id=id)]
             else:
                 # Define an anchor.
-                return ['\n[[ref{rid},{id}]] '.format(rid=self.tidy_ref_id(id), id=id)] + self.convert_children(tag)
+                return ['[[ref{rid},{id}]]'.format(rid=self.tidy_ref_id(id), id=id)] + self.convert_children(tag)
         href = tag.get('href')
         if href:
             if href.startswith('#[') and href.endswith(']'):
@@ -466,7 +468,7 @@ class AdocOutput(BaseOutput):
             res = res + [ ':author: {author}\n'.format(author=self.author) ]
         res = res + [ ':figure-caption!:\n:imagesdir: ..\n' ]
         if self.summary:
-            res = res + [ '\n\n[.lead]\n' ] + self.summary
+            res = res + [ '\n[.lead]\n' ] + self.summary + ['\n\n']
         res = res + body
         if self.bio and self.includebio:
             res = res + self.bio
