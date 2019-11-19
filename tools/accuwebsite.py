@@ -136,7 +136,7 @@ class AdocOutput(BaseOutput):
     # alphanumeric and _.
     @staticmethod
     def tidy_ref_id(ref):
-        return "".join([c if c.isalnum() or c == '_' else '_' for c in ref])
+        return ''.join([c if c.isalnum() or c == '_' else '_' for c in ref])
 
     @staticmethod
     def trim(text, spaces=True):
@@ -150,6 +150,20 @@ class AdocOutput(BaseOutput):
         if spaces and text:
             text[0] = text[0].lstrip()
         return text
+
+    def join_list(self, l):
+        res = ''
+        for item in l:
+            if callable(item):
+                res += item(res)
+            elif isinstance(item, str):
+                res += item
+            else:
+                raise ConversionError('Unexpected item {}'.format(item))
+        return res
+
+    def to_line_start(self, s):
+        return '' if len(s) == 0 or s.endswith('\n') else '\n'
 
     def imgpath(self, src):
         if not src:
@@ -187,7 +201,7 @@ class AdocOutput(BaseOutput):
 
     def p(self, tag):
         if self.has_class(tag, 'bio'):
-            self.bio = ['\n.{author}\n****\n'] + self.trim(self.convert_children(tag)) + ['\n****\n']
+            self.bio = [self.to_line_start, '\n.{author}\n****\n'] + self.trim(self.convert_children(tag)) + [self.to_line_start, '****\n']
             return []
         elif self.has_class(tag, 'quote'):
             # This is a bit nasty. We want the formatted text (so we include
@@ -215,9 +229,9 @@ class AdocOutput(BaseOutput):
                 else:
                     by = None
             if by:
-                return ['\n[quote,{by}]\n____\n'.format(by=by)] + quote + ['\n____\n']
+                return [self.to_line_start, '\n[quote,{by}]\n____\n'.format(by=by)] + quote + [self.to_line_start, '____\n']
             else:
-                return ['\n[quote]\n____\n'] + quote + ['\n____\n']
+                return [self.to_line_start, '\n[quote]\n____\n'] + quote + [self.to_line_start, '____\n']
         elif self.has_class(tag, 'blockquote'):
             return self.blockquote(tag)
         elif self.has_class(tag, 'Byline'):
@@ -236,12 +250,12 @@ class AdocOutput(BaseOutput):
             self.in_biblio_ref = True
             ref = self.convert_children(tag)
             self.in_biblio_ref = False
-            return ['\n- '] + ref + ['\n']
+            return [self.to_line_start, '- '] + ref + [self.to_line_start]
         else:
-            return ['\n'] + self.trim(self.convert_children(tag)) + ['\n']
+            return [self.to_line_start, '\n'] + self.trim(self.convert_children(tag)) + [self.to_line_start]
 
     def blockquote(self, tag):
-        return ['\n\n====\n'] + self.trim(self.convert_children(tag)) + ['\n====\n']
+        return [self.to_line_start, '\n====\n'] + self.trim(self.convert_children(tag)) + [self.to_line_start, '====\n']
 
     def code(self, tag):
         if self.in_pre:
@@ -284,19 +298,19 @@ class AdocOutput(BaseOutput):
 
     def span(self, tag):
         if self.has_class(tag, 'author'):
-            self.author = ''.join(self.convert_children(tag))
+            self.author = self.join_list(self.convert_children(tag))
             return []
         else:
             return ['*'] + self.convert_children(tag) + ['*']
 
     def hr(self, tag):
-        return ["\n'''\n"]
+        return [self.to_line_start, "\n'''\n"]
 
     def div(self, tag):
         return self.convert_children(tag)
 
     def h1(self, tag):
-        self.title = self.trim(''.join(self.convert_children(tag)))
+        self.title = self.trim(self.join_list(self.convert_children(tag)))
         self.title_fname = article_title_to_filename(self.title)
         return []
 
@@ -304,9 +318,9 @@ class AdocOutput(BaseOutput):
         # Any header block 'References' may have a bibliography.
         title = self.trim(self.convert_children(tag))
         hdr = '=' * n
-        if ''.join(title) == 'References':
+        if self.join_list(title) == 'References':
             hdr = '[bibliography]\n' + hdr
-        return [ '\n' + hdr + ' '] + title + ['\n']
+        return [self.to_line_start, '\n' + hdr + ' '] + title + ['\n']
 
     def h2(self, tag):
         return self.hn(tag, 2)
@@ -327,7 +341,7 @@ class AdocOutput(BaseOutput):
         self.in_pre = True
         src = self.convert_children(tag)
         self.in_pre = False
-        return ['\n\n[source]\n----\n'] + self.trim(src, False) + ['\n----\n']
+        return [self.to_line_start, '\n[source]\n----\n'] + self.trim(src, False) + ['\n----\n']
 
     def br(self, tag):
         return [' +\n']
@@ -355,22 +369,22 @@ class AdocOutput(BaseOutput):
         # keep everything with the current bullet.
         item = self.trim(self.convert_children(tag))
         print(item)
-        return ['\n\n{} '.format(self.list_item[-1])] + item
-        lines = ''.join(item).splitlines()
+        return [self.to_line_start, '\n{} '.format(self.list_item[-1])] + item
+        lines = self.join_list(item).splitlines()
         for i in range(len(lines)):
             l = lines[i].strip()
             if not l:
                 lines[i] = '+'
-        return ['\n\n{} '.format(self.list_item[-1])] + ['\n'.join(lines)]
+        return [self.to_line_start, '\n{} '.format(self.list_item[-1])] + ['\n'.join(lines)]
 
     def dl(self, tag):
-        return ['\n\n'] + self.convert_children(tag) + ['\n\n']
+        return [self.to_line_start, '\n'] + self.convert_children(tag) + [self.to_line_start, '\n']
 
     def dt(self, tag):
-        return ['\n'] + self.convert_children(tag) + ['::\n']
+        return [self.to_line_start, '\n'] + self.convert_children(tag) + ['::\n']
 
     def dd(self, tag):
-        return ['\n****\n'] + self.convert_children(tag) + ['\n****\n']
+        return [self.to_line_start, '\n****\n'] + self.convert_children(tag) + [self.to_line_start, '****\n']
 
     def table(self, tag):
         self.table_level += 1
@@ -378,19 +392,19 @@ class AdocOutput(BaseOutput):
             raise ConversionError('Sorry, I can\'t nest tables deeper than {}'.format(self.table_level))
         sidebar = self.has_class(tag, 'sidebartable')
         if sidebar:
-            res = ['\n\n****\n{}\n'.format(self.table_delim_start[self.table_level])]
+            res = [self.to_line_start, '\n****\n{}\n'.format(self.table_delim_start[self.table_level])]
         else:
-            res = ['\n\n{}\n'.format(self.table_delim_start[self.table_level])]
+            res = [self.to_line_start, '\n{}\n'.format(self.table_delim_start[self.table_level])]
         res = res + self.trim(self.convert_children(tag))
         if sidebar:
-            res = res + ['\n{}\n****'.format(self.table_delim_end[self.table_level])]
+            res = res + [self.to_line_start, '\n{}\n****'.format(self.table_delim_end[self.table_level])]
         else:
-            res = res + ['\n{}\n'.format(self.table_delim_end[self.table_level])]
+            res = res + [self.to_line_start, '\n{}\n'.format(self.table_delim_end[self.table_level])]
         self.table_level -= 1
 
         # Look out for particular table formations and replace with
         # more appropriate markup.
-        s = ''.join(res)
+        s = self.join_list(res)
         match = self.table_listing_re.fullmatch(s)
         if match:
             return [ '{prelude}\n.{id}\n{src}\n{postlude}'.format(
@@ -408,7 +422,7 @@ class AdocOutput(BaseOutput):
         return res
 
     def tr(self, tag):
-        return ['\n\n'] + self.convert_children(tag)
+        return [self.to_line_start, '\n'] + self.convert_children(tag)
 
     def td(self, tag):
         if self.has_class(tag, 'title'):
@@ -427,7 +441,7 @@ class AdocOutput(BaseOutput):
         return self.convert_children(tag)
 
     def tbody(self, tag):
-        return self.convert_children(tag) + ['\n']
+        return self.convert_children(tag) + [self.to_line_start]
 
     def a(self, tag):
         id = tag.get('id')
@@ -454,7 +468,7 @@ class AdocOutput(BaseOutput):
 
     def img(self, tag):
         src = self.imgpath(tag.get('src'))
-        return ['\nimage::{src}[]\n'.format(src=src)]
+        return [self.to_line_start, 'image::{src}[]\n'.format(src=src)]
 
     def tidy_adoc(self, adoc):
         # Strip any [] around an inline ref.
@@ -472,7 +486,7 @@ class AdocOutput(BaseOutput):
         res = res + body
         if self.bio and self.includebio:
             res = res + self.bio
-        return self.tidy_adoc(''.join(res))
+        return self.tidy_adoc(self.join_list(res))
 
     def image_renames(self, basedir=''):
         res = []

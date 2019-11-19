@@ -103,4 +103,6 @@ def test_a_bib_ref():
 
 def test_img():
     res = convert('<img src="link.html" />')
-    assert res == '\nimage::link.html[]\n'
+    assert res == 'image::link.html[]\n'
+    res = convert('<xml>text and <img src="link.html" /></xml>')
+    assert res == 'text and \nimage::link.html[]\n'
