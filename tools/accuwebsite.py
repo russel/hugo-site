@@ -183,9 +183,15 @@ class AdocOutput(BaseOutput):
             # This appears to be a regular image bug.
             if s == ' />':
                 s = ''
+            s = s.replace('C++', '{cpp}')
             s = s.replace('\n', ' ')\
-                .replace('[', 'pass:[[]')
-        s = s.replace('C++', '{cpp}')
+                .replace('[', 'pass:[[]')\
+                .replace('+', 'pass:[+]')\
+                .replace('`', 'pass:[`]')\
+                .replace('_', 'pass:[_]')\
+                .replace('^', 'pass:[^]')\
+                .replace('~', 'pass:[~]')\
+                .replace('*', 'pass:[*]')
         # TODO. Prevent character substitution on =>, <=, -> <=>.
         return [s]
 
