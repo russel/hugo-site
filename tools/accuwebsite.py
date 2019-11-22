@@ -47,7 +47,7 @@ class BaseOutput:
     def has_class(tag, classname):
         """ See if tag has a class of given name.
 
-        BS behaves returns a list of classes on HTML input, and
+        BS returns a list of classes on HTML input, and
         a single class in XML input. Deal with both.
         """
         cl = tag.get('class')
