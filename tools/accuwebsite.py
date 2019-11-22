@@ -242,7 +242,10 @@ class AdocOutput(BaseOutput):
             self.in_biblio_ref = False
             return [self.to_line_start, '- '] + ref + [self.to_line_start]
         else:
-            return self.blank_line_before() + self.convert_children(tag) + [self.to_line_start]
+            para = self.convert_children(tag)
+            if para and not callable(para[0]):
+                para[0] = para[0].lstrip()
+            return self.blank_line_before() + para + [self.to_line_start]
 
     def blockquote(self, tag):
         return self.blank_line_before() + ['====\n'] + self.convert_children(tag) + [self.to_line_start, '====\n']

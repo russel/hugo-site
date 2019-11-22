@@ -44,6 +44,8 @@ def test_h6():
 def test_p():
     res = convert('<p>text and more</p>')
     assert res == '\ntext and more\n'
+    res = convert('<p> space then text and more</p>')
+    assert res == '\nspace then text and more\n'
 
 def test_p2():
     res = convert('<xml><p>text and more</p><p>and a second</p></xml>')
