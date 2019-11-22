@@ -138,22 +138,6 @@ class AdocOutput(BaseOutput):
     def tidy_ref_id(ref):
         return ''.join([c if c.isalnum() or c == '_' else '_' for c in ref])
 
-    @staticmethod
-    def trim(text, spaces=True):
-        while text and not callable(text[0]) and not text[0].strip():
-            del text[0]
-        while text and not callable(text[-1]) and not text[-1].strip():
-            del text[-1]
-        if text:
-            if not callable(text[0]):
-                text[0] = text[0].lstrip('\n')
-            if not callable(text[-1]):
-                text[-1] = text[-1].rstrip()
-        if spaces and text:
-            if not callable(text[0]):
-                text[0] = text[0].lstrip()
-        return text
-
     def join_list(self, l):
         res = ''
         for item in l:
@@ -207,7 +191,7 @@ class AdocOutput(BaseOutput):
 
     def p(self, tag):
         if self.has_class(tag, 'bio'):
-            self.bio = self.blank_line_before() + ['.{author}\n****\n'] + self.trim(self.convert_children(tag)) + [self.to_line_start, '****\n']
+            self.bio = self.blank_line_before() + ['.{author}\n****\n'] + self.convert_children(tag) + [self.to_line_start, '****\n']
             return []
         elif self.has_class(tag, 'quote'):
             # This is a bit nasty. We want the formatted text (so we include
@@ -222,7 +206,7 @@ class AdocOutput(BaseOutput):
                     break
                 else:
                     quote.extend(self.convert(c))
-            quote = self.trim(quote)
+            quote = quote
             split = tag.get_text().rsplit('~ ', 1)
             if len(split) > 1:
                 by = split[1].replace('\n', '')
@@ -241,7 +225,7 @@ class AdocOutput(BaseOutput):
         elif self.has_class(tag, 'blockquote'):
             return self.blockquote(tag)
         elif self.has_class(tag, 'Byline'):
-            self.summary = self.trim(self.convert_children(tag))
+            self.summary = self.convert_children(tag)
             return []
         elif self.has_class(tag, 'bibliomixed'):
             # These are a single reference. The first child is the anchor.
@@ -258,10 +242,10 @@ class AdocOutput(BaseOutput):
             self.in_biblio_ref = False
             return [self.to_line_start, '- '] + ref + [self.to_line_start]
         else:
-            return self.blank_line_before() + self.trim(self.convert_children(tag)) + [self.to_line_start]
+            return self.blank_line_before() + self.convert_children(tag) + [self.to_line_start]
 
     def blockquote(self, tag):
-        return self.blank_line_before() + ['====\n'] + self.trim(self.convert_children(tag)) + [self.to_line_start, '====\n']
+        return self.blank_line_before() + ['====\n'] + self.convert_children(tag) + [self.to_line_start, '====\n']
 
     def code(self, tag):
         if self.in_pre:
@@ -276,7 +260,7 @@ class AdocOutput(BaseOutput):
         return self.strong(tag)
 
     def em(self, tag):
-        return ['_'] + self.trim(self.convert_children(tag)) + ['_']
+        return ['_'] + self.convert_children(tag) + ['_']
 
     def u(self, tag):
         return self.em(tag)
@@ -288,13 +272,13 @@ class AdocOutput(BaseOutput):
         return self.em(tag)
 
     def strong(self, tag):
-        return ['*'] + self.trim(self.convert_children(tag)) + ['*']
+        return ['*'] + self.convert_children(tag) + ['*']
 
     def sup(self, tag):
-        return ['^'] + self.trim(self.convert_children(tag)) + ['^']
+        return ['^'] + self.convert_children(tag) + ['^']
 
     def sub(self, tag):
-        return ['~'] + self.trim(self.convert_children(tag)) + ['~']
+        return ['~'] + self.convert_children(tag) + ['~']
 
     def big(self, tag):
         return self.convert_children(tag)
@@ -316,13 +300,13 @@ class AdocOutput(BaseOutput):
         return self.convert_children(tag)
 
     def h1(self, tag):
-        self.title = self.trim(self.join_list(self.convert_children(tag)))
+        self.title = self.join_list(self.convert_children(tag))
         self.title_fname = article_title_to_filename(self.title)
         return []
 
     def hn(self, tag, n):
         # Any header block 'References' may have a bibliography.
-        title = self.trim(self.convert_children(tag))
+        title = self.convert_children(tag)
         hdr = '=' * n
         if self.join_list(title) == 'References':
             hdr = '[bibliography]\n' + hdr
@@ -347,7 +331,7 @@ class AdocOutput(BaseOutput):
         self.in_pre = True
         src = self.convert_children(tag)
         self.in_pre = False
-        return self.blank_line_before() + ['[source]\n----\n'] + self.trim(src, False) + ['\n----\n']
+        return self.blank_line_before() + ['[source]\n----\n'] + src + ['\n----\n']
 
     def br(self, tag):
         return [' +\n']
@@ -391,7 +375,7 @@ class AdocOutput(BaseOutput):
             res = self.blank_line_before() + ['****\n{}\n'.format(self.table_delim_start[self.table_level])]
         else:
             res = self.blank_line_before() + ['{}\n'.format(self.table_delim_start[self.table_level])]
-        res = res + self.trim(self.convert_children(tag))
+        res = res + self.convert_children(tag)
         if sidebar:
             res = res + self.blank_line_before() + ['{}\n****'.format(self.table_delim_end[self.table_level])]
         else:
