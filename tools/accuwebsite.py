@@ -355,7 +355,7 @@ class AdocOutput(BaseOutput):
         res = self.convert_children(tag)
         self.ul_level -= 1
         self.list_item.pop()
-        return [self.to_line_start] + res
+        return self.blank_line_before() + res
 
     def ol(self, tag):
         self.list_item.append('.' * self.ol_level)
@@ -363,7 +363,7 @@ class AdocOutput(BaseOutput):
         res = self.convert_children(tag)
         self.ol_level -= 1
         self.list_item.pop()
-        return [self.to_line_start] + res
+        return self.blank_line_before() + res
 
     def li(self, tag):
         if len(self.list_item) < 1:

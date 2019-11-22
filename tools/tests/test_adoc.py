@@ -109,10 +109,10 @@ def test_img():
 
 def test_ol():
     res = convert('<ol><li>List 1</li><li>List 2</li></ol>')
-    assert res == '. List 1\n. List 2\n'
+    assert res == '\n. List 1\n. List 2\n'
     res = convert('<ol><li>One<ol><li>List 1</li></ol></li><li>Two<ol><li>List 2</li></ol></li></ol>')
-    assert res == '. One\n.. List 1\n. Two\n.. List 2\n'
+    assert res == '\n. One\n+\n.. List 1\n. Two\n+\n.. List 2\n'
 
 def test_ul():
     res = convert('<ul><li>List 1</li><li>List 2</li></ul>')
-    assert res == '* List 1\n* List 2\n'
+    assert res == '\n* List 1\n* List 2\n'
