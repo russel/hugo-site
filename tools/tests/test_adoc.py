@@ -106,3 +106,13 @@ def test_img():
     assert res == 'image::link.html[]\n'
     res = convert('<xml>text and <img src="link.html" /></xml>')
     assert res == 'text and \nimage::link.html[]\n'
+
+def test_ol():
+    res = convert('<ol><li>List 1</li><li>List 2</li></ol>')
+    assert res == '. List 1\n. List 2\n'
+    res = convert('<ol><li>One<ol><li>List 1</li></ol></li><li>Two<ol><li>List 2</li></ol></li></ol>')
+    assert res == '. One\n.. List 1\n. Two\n.. List 2\n'
+
+def test_ul():
+    res = convert('<ul><li>List 1</li><li>List 2</li></ul>')
+    assert res == '* List 1\n* List 2\n'

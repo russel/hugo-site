@@ -165,6 +165,9 @@ class AdocOutput(BaseOutput):
     def to_line_start(self, s):
         return '' if len(s) == 0 or s.endswith('\n') else '\n'
 
+    def blank_line_before(self):
+        return [self.to_line_start,  '+\n' if len(self.list_item) > 0 else '\n']
+
     def imgpath(self, src):
         if not src:
             raise ConversionError('Image with no src tag')
@@ -201,7 +204,7 @@ class AdocOutput(BaseOutput):
 
     def p(self, tag):
         if self.has_class(tag, 'bio'):
-            self.bio = [self.to_line_start, '\n.{author}\n****\n'] + self.trim(self.convert_children(tag)) + [self.to_line_start, '****\n']
+            self.bio = self.blank_line_before() + ['.{author}\n****\n'] + self.trim(self.convert_children(tag)) + [self.to_line_start, '****\n']
             return []
         elif self.has_class(tag, 'quote'):
             # This is a bit nasty. We want the formatted text (so we include
@@ -229,9 +232,9 @@ class AdocOutput(BaseOutput):
                 else:
                     by = None
             if by:
-                return [self.to_line_start, '\n[quote,{by}]\n____\n'.format(by=by)] + quote + [self.to_line_start, '____\n']
+                return self.blank_line_before() + ['[quote,{by}]\n____\n'.format(by=by)] + quote + [self.to_line_start, '____\n']
             else:
-                return [self.to_line_start, '\n[quote]\n____\n'] + quote + [self.to_line_start, '____\n']
+                return self.blank_line_before() + ['[quote]\n____\n'] + quote + [self.to_line_start, '____\n']
         elif self.has_class(tag, 'blockquote'):
             return self.blockquote(tag)
         elif self.has_class(tag, 'Byline'):
@@ -252,10 +255,10 @@ class AdocOutput(BaseOutput):
             self.in_biblio_ref = False
             return [self.to_line_start, '- '] + ref + [self.to_line_start]
         else:
-            return [self.to_line_start, '\n'] + self.trim(self.convert_children(tag)) + [self.to_line_start]
+            return self.blank_line_before() + self.trim(self.convert_children(tag)) + [self.to_line_start]
 
     def blockquote(self, tag):
-        return [self.to_line_start, '\n====\n'] + self.trim(self.convert_children(tag)) + [self.to_line_start, '====\n']
+        return self.blank_line_before() + ['====\n'] + self.trim(self.convert_children(tag)) + [self.to_line_start, '====\n']
 
     def code(self, tag):
         if self.in_pre:
@@ -304,7 +307,7 @@ class AdocOutput(BaseOutput):
             return ['*'] + self.convert_children(tag) + ['*']
 
     def hr(self, tag):
-        return [self.to_line_start, "\n'''\n"]
+        return self.blank_line_before() + ["'''\n"]
 
     def div(self, tag):
         return self.convert_children(tag)
@@ -320,7 +323,7 @@ class AdocOutput(BaseOutput):
         hdr = '=' * n
         if self.join_list(title) == 'References':
             hdr = '[bibliography]\n' + hdr
-        return [self.to_line_start, '\n' + hdr + ' '] + title + ['\n']
+        return self.blank_line_before() + [hdr + ' '] + title + ['\n']
 
     def h2(self, tag):
         return self.hn(tag, 2)
@@ -341,7 +344,7 @@ class AdocOutput(BaseOutput):
         self.in_pre = True
         src = self.convert_children(tag)
         self.in_pre = False
-        return [self.to_line_start, '\n[source]\n----\n'] + self.trim(src, False) + ['\n----\n']
+        return self.blank_line_before() + ['[source]\n----\n'] + self.trim(src, False) + ['\n----\n']
 
     def br(self, tag):
         return [' +\n']
@@ -352,7 +355,7 @@ class AdocOutput(BaseOutput):
         res = self.convert_children(tag)
         self.ul_level -= 1
         self.list_item.pop()
-        return res
+        return [self.to_line_start] + res
 
     def ol(self, tag):
         self.list_item.append('.' * self.ol_level)
@@ -360,31 +363,21 @@ class AdocOutput(BaseOutput):
         res = self.convert_children(tag)
         self.ol_level -= 1
         self.list_item.pop()
-        return res
+        return [self.to_line_start] + res
 
     def li(self, tag):
         if len(self.list_item) < 1:
             raise ConversionError('List item without enclosing list')
-        # If there are blank lines in the item, replace with '+' to
-        # keep everything with the current bullet.
-        item = self.trim(self.convert_children(tag))
-        print(item)
-        return [self.to_line_start, '\n{} '.format(self.list_item[-1])] + item
-        lines = self.join_list(item).splitlines()
-        for i in range(len(lines)):
-            l = lines[i].strip()
-            if not l:
-                lines[i] = '+'
-        return [self.to_line_start, '\n{} '.format(self.list_item[-1])] + ['\n'.join(lines)]
+        return [self.to_line_start, self.list_item[-1] + ' '] + self.convert_children(tag) + [self.to_line_start]
 
     def dl(self, tag):
-        return [self.to_line_start, '\n'] + self.convert_children(tag) + [self.to_line_start, '\n']
+        return self.blank_line_before() + self.convert_children(tag) + [self.to_line_start, '\n']
 
     def dt(self, tag):
-        return [self.to_line_start, '\n'] + self.convert_children(tag) + ['::\n']
+        return self.blank_line_before() + self.convert_children(tag) + ['::\n']
 
     def dd(self, tag):
-        return [self.to_line_start, '\n****\n'] + self.convert_children(tag) + [self.to_line_start, '****\n']
+        return self.blank_line_before() + ['****\n'] + self.convert_children(tag) + [self.to_line_start, '****\n']
 
     def table(self, tag):
         self.table_level += 1
@@ -392,14 +385,14 @@ class AdocOutput(BaseOutput):
             raise ConversionError('Sorry, I can\'t nest tables deeper than {}'.format(self.table_level))
         sidebar = self.has_class(tag, 'sidebartable')
         if sidebar:
-            res = [self.to_line_start, '\n****\n{}\n'.format(self.table_delim_start[self.table_level])]
+            res = self.blank_line_before() + ['****\n{}\n'.format(self.table_delim_start[self.table_level])]
         else:
-            res = [self.to_line_start, '\n{}\n'.format(self.table_delim_start[self.table_level])]
+            res = self.blank_line_before() + ['{}\n'.format(self.table_delim_start[self.table_level])]
         res = res + self.trim(self.convert_children(tag))
         if sidebar:
-            res = res + [self.to_line_start, '\n{}\n****'.format(self.table_delim_end[self.table_level])]
+            res = res + self.blank_line_before() + ['{}\n****'.format(self.table_delim_end[self.table_level])]
         else:
-            res = res + [self.to_line_start, '\n{}\n'.format(self.table_delim_end[self.table_level])]
+            res = res + self.blank_line_before() + ['{}\n'.format(self.table_delim_end[self.table_level])]
         self.table_level -= 1
 
         # Look out for particular table formations and replace with
@@ -422,7 +415,7 @@ class AdocOutput(BaseOutput):
         return res
 
     def tr(self, tag):
-        return [self.to_line_start, '\n'] + self.convert_children(tag)
+        return self.blank_line_before() + self.convert_children(tag)
 
     def td(self, tag):
         if self.has_class(tag, 'title'):
