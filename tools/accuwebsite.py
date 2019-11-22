@@ -260,7 +260,7 @@ class AdocOutput(BaseOutput):
         if self.in_pre:
             return self.convert_children(tag)
         else:
-            return ['`'] + self.convert_children(tag) + ['`']
+            return ['``'] + self.convert_children(tag) + ['``']
 
     def tt(self, tag):
         return self.code(tag)
@@ -269,7 +269,7 @@ class AdocOutput(BaseOutput):
         return self.strong(tag)
 
     def em(self, tag):
-        return ['_'] + self.convert_children(tag) + ['_']
+        return ['__'] + self.convert_children(tag) + ['__']
 
     def u(self, tag):
         return self.em(tag)
@@ -281,7 +281,7 @@ class AdocOutput(BaseOutput):
         return self.em(tag)
 
     def strong(self, tag):
-        return ['*'] + self.convert_children(tag) + ['*']
+        return ['**'] + self.convert_children(tag) + ['**']
 
     def sup(self, tag):
         return ['^'] + self.convert_children(tag) + ['^']
