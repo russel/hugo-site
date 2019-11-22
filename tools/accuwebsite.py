@@ -140,15 +140,18 @@ class AdocOutput(BaseOutput):
 
     @staticmethod
     def trim(text, spaces=True):
-        while text and not text[0].strip():
+        while text and not callable(text[0]) and not text[0].strip():
             del text[0]
-        while text and not text[-1].strip():
+        while text and not callable(text[-1]) and not text[-1].strip():
             del text[-1]
         if text:
-            text[0] = text[0].lstrip('\n')
-            text[-1] = text[-1].rstrip()
+            if not callable(text[0]):
+                text[0] = text[0].lstrip('\n')
+            if not callable(text[-1]):
+                text[-1] = text[-1].rstrip()
         if spaces and text:
-            text[0] = text[0].lstrip()
+            if not callable(text[0]):
+                text[0] = text[0].lstrip()
         return text
 
     def join_list(self, l):
