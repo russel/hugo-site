@@ -447,7 +447,7 @@ class AdocOutput(BaseOutput):
             if id[0] == '[' and id[-1] == ']':
                 # It's a bibliography entry. These should have no content.
                 id = id[1:-1]
-                return ['[[[ref{rid},{id}]]]'.format(rid=self.tidy_ref_id(id), id=id)]
+                return ['[[[ref{rid},{id}]]] '.format(rid=self.tidy_ref_id(id), id=id)]
             else:
                 # Define an anchor.
                 return ['[[ref{rid},{id}]]'.format(rid=self.tidy_ref_id(id), id=id)] + self.convert_children(tag)

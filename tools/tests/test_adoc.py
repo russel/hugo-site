@@ -88,9 +88,9 @@ def test_a():
     assert res == '\ntext and link:link.html[Link] more\n'
 
 def test_a_bib():
-    res = convert('<p>text and <a id="[anid]" /> more</p>')
+    res = convert('<p>text and <a id="[anid]" />more</p>')
     assert res == '\ntext and [[[refanid,anid]]] more\n'
-    res = convert('<p>text and <a name="[anid]" /> more</p>')
+    res = convert('<p>text and <a name="[anid]" />more</p>')
     assert res == '\ntext and [[[refanid,anid]]] more\n'
     res = convert('<p>text and <a id="anid">anchor</a> more</p>')
     assert res == '\ntext and [[refanid,anid]]anchor more\n'
