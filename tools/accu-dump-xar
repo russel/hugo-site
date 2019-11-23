@@ -43,7 +43,7 @@ where xar_dd_itemid={}""".format(article_id)
             cursor2.execute(dyndata_sql)
             for row2 in cursor2.fetchall():
                 if row2[0] in propids:
-                    article[propids[row2[0]]] = row2[1]
+                    article[propids[row2[0]]] = toutf8(row2[1])
             cat_sql = """\
 select xar_name, xar_description from xar_categories join xar_categories_linkage on xar_categories_linkage.xar_cid = xar_categories.xar_cid where xar_categories_linkage.xar_iid = {}""".format(article_id)
             cursor2.execute(cat_sql)
@@ -121,7 +121,7 @@ where xar_dd_itemid={}""".format(page_id)
             cursor2.execute(dyndata_sql)
             for row2 in cursor2.fetchall():
                 if row2[0] in propids:
-                    page[propids[row2[0]]] = row2[1]
+                    page[propids[row2[0]]] = toutf8(row2[1])
 
             outfile = pathlib.Path(outputdir, pagetype, "{:05}.json".format(page_id))
             outfile.parent.mkdir(parents=True, exist_ok=True)
