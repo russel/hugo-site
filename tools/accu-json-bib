@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 #
-# accu-json-bib [--bib] [--site-dir <dir>] JSON file <JSON file ....>
+# accu-json-bib [--bib] [--journal CVU|Overload] JSON file <JSON file ....>
 #
 # Dump bib generated from JSON data
 
