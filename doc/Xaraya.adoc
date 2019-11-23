@@ -233,18 +233,18 @@ We start with the handcrafted `overload_bib.txt` and `cvu_bib.txt` as used
 currently.
 
 As noted earlier, `accu-dump-xar` converts the data it downloads from Latin1 to UTF-8.
-We need to perform the same conversion on these files too.
+We need to ensure biblio data is UTF-8 too. The current `overload_bib.txt` appears
+to be UTF-8, but `cvu_bib.txt` seems to use a Windows encoding that we need to convert.
 
 ----
-$ iconv -f ISO8859-1 -t UTF8 overload_bib.txt > overload_txt.bib
-$ iconv -f ISO8859-1 -t UTF8 cvu_bib.txt > cvu_txt.bib
+$ iconv -f WINDOWS-1258 -t UTF8 cvu_bib.txt > cvu_txt.bib
 ----
 
 With character sets aligned, we can now proceed to merge the two `.bib` files to obtain
 a single consolidated `.bib` for each journal.
 
 ----
-$ ./accu-bib-merge overload_txt.bib overload_xaraya.bib > overload.bib
+$ ./accu-bib-merge overload_bib.txt overload_xaraya.bib > overload.bib
 $ ./accu-bib-merge cvu_txt.bib cvu_xaraya.bib > cvu.bib
 ----
 
