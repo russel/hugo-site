@@ -20,6 +20,11 @@ def findbibentry(bib, metadata):
         if 'Id' in article and 'Id' in metadata and \
            article['Id'] == metadata['Id']:
             return article
+        if 'Journal' not in metadata or \
+           'Year' not in metadata or \
+           'Month' not in metadata or \
+           'Title' not in metadata:
+            return None
         if article['Journal'] == metadata['Journal'] and \
            article['Year'] == metadata['Year'] and \
            article['Month'] == metadata['Month'] and \
@@ -99,13 +104,14 @@ def main():
             bib = accuwebsite.readbib(bibf)
         for fname in args.input:
             try:
-                with open(fname) as f:
-                    article = accuwebsite.read_json(f)
-                if article['Journal'] != args.journal:
-                    continue
                 if args.verbose:
                     print(fname, file=sys.stderr)
-                frontmatter = gen_frontmatter(article, findbibentry(bib, article))
+                with open(fname) as f:
+                    article = accuwebsite.read_json(f)
+                bibentry = findbibentry(bib, article)
+                if not bibentry:
+                    continue
+                frontmatter = gen_frontmatter(article, bibentry)
                 outfile = pathlib.Path(args.sitedir) / accuwebsite.article_path(article['Journal'], article['Year'], article['Month'], article['Title'])
                 outfile.parent.mkdir(parents=True, exist_ok=True)
                 adoc = accuwebsite.convert_article(article['Body'], 'html', 'adoc', article['Title'], article['Author'], article['Note'], str(outfile.parent), args.includebio)
