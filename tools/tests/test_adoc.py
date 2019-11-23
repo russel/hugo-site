@@ -118,3 +118,7 @@ def test_ol():
 def test_ul():
     res = convert('<ul><li>List 1</li><li>List 2</li></ul>')
     assert res == '\n* List 1\n* List 2\n'
+
+def test_li():
+    res = convert('<ul><li><p>List 1</p></li><li>List 2</li></ul>')
+    assert res == '\n* List 1\n* List 2\n'

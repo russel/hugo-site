@@ -360,7 +360,11 @@ class AdocOutput(BaseOutput):
     def li(self, tag):
         if len(self.list_item) < 1:
             raise ConversionError('List item without enclosing list')
-        return [self.to_line_start, self.list_item[-1] + ' '] + self.convert_children(tag) + [self.to_line_start]
+        # Look out for a list item that starts with a continuation.
+        item = self.convert_children(tag)
+        while item and (callable(item[0]) or item[0] == '+\n'):
+            del item[0]
+        return [self.to_line_start, self.list_item[-1] + ' '] + item + [self.to_line_start]
 
     def dl(self, tag):
         return self.blank_line_before() + self.convert_children(tag) + [self.to_line_start, '\n']
