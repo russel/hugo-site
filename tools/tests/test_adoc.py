@@ -75,7 +75,7 @@ def test_span():
     res = convert('<p>text <span>and</span> more</p>')
     assert res == '\ntext **and** more\n'
     res = convert('<p>text <span class="author">author2</span> more</p>')
-    assert res == '= Title\n:author: author2\n:figure-caption!:\n:imagesdir: ..\n\n[.lead]\nSummary\n\n\ntext  more\n'
+    assert res == '\ntext **author2** more\n'
 
 def test_strong():
     res = convert('<p>text <strong>and</strong> more</p>')

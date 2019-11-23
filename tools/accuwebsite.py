@@ -296,11 +296,7 @@ class AdocOutput(BaseOutput):
         return ['('] + self.convert_children(tag) + [')']
 
     def span(self, tag):
-        if self.has_class(tag, 'author'):
-            self.author = self.join_list(self.convert_children(tag))
-            return []
-        else:
-            return ['**'] + self.convert_children(tag) + ['**']
+        return ['**'] + self.convert_children(tag) + ['**']
 
     def hr(self, tag):
         return self.blank_line_before() + ["'''\n"]
