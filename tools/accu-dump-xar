@@ -145,6 +145,9 @@ def main():
     parser.add_argument('--host', dest='host',
                         action='store', default='localhost',
                         help='database host', metavar='HOSTNAME')
+    parser.add_argument('--port', dest='port',
+                        action='store', type=int, default='3306',
+                        help='database port', metavar='PORT')
     parser.add_argument('-o', '--output-dir', dest='outputdir',
                         action='store', default='.',
                         help='directory for output files', metavar='DIR')
@@ -160,7 +163,7 @@ def main():
     pagetypes = { "accupages": 3, "conferencepages": 4 }
 
     try:
-        db = pymysql.connect(args.host, 'accuorg_xarad', args.password, 'accuorg_xar', charset='latin1')
+        db = pymysql.connect(args.host, 'accuorg_xarad', args.password, 'accuorg_xar', port=args.port, charset='latin1')
         if args.pubtype == 'bookreviews':
             dump_bookreviews(db, args.outputdir)
         elif args.pubtype.endswith('pages'):
