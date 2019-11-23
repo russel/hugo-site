@@ -14,14 +14,11 @@ import traceback
 import accuwebsite
 
 def print_bib(args):
-    # Process in reverse order, to try to get the newest first.
-    flist = []
-    for fname in args.input:
-        flist.insert(0, fname)
-    for fname in flist:
+    # Sort order to get newest first.
+    for fname in sorted(args.input, reverse=True):
         with open(fname) as f:
             article = accuwebsite.read_json(f, True)
-        if article['Journal'] != args.journal:
+        if 'Journal' not in article or article['Journal'] != args.journal:
             continue
         print('@Article{')
         for s in ['Id', 'Title', 'Author', 'Note', 'Journal', 'Month', 'Year', 'CategoryID', 'CategoryName']:
