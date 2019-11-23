@@ -414,10 +414,14 @@ class AdocOutput(BaseOutput):
         return self.blank_line_before() + self.convert_children(tag)
 
     def td(self, tag):
-        if self.has_class(tag, 'title'):
-            res = [' h{}'.format(self.table_cell_delim[self.table_level])]
+        if tag.has_attr('colspan'):
+            colspan = tag['colspan'] + '+'
         else:
-            res = [' a{}'.format(self.table_cell_delim[self.table_level])]
+            colspan = ''
+        if self.has_class(tag, 'title'):
+            res = [' {}h{}'.format(colspan, self.table_cell_delim[self.table_level])]
+        else:
+            res = [' {}a{}'.format(colspan, self.table_cell_delim[self.table_level])]
         return res + self.convert_children(tag)
 
     def th(self, tag):
