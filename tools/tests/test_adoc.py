@@ -53,33 +53,33 @@ def test_p2():
 
 def test_cite():
     res = convert('<p>text <cite>and</cite> more</p>')
-    assert res == '\ntext _and_ more\n'
+    assert res == '\ntext __and__ more\n'
 
 def test_em():
     res = convert('<p>text <em>and</em> more</p>')
-    assert res == '\ntext _and_ more\n'
+    assert res == '\ntext __and__ more\n'
 
 def test_i():
     res = convert('<p>text <i>and</i> more</p>')
-    assert res == '\ntext _and_ more\n'
+    assert res == '\ntext __and__ more\n'
 
 def test_u():
     res = convert('<p>text <u>and</u> more</p>')
-    assert res == '\ntext _and_ more\n'
+    assert res == '\ntext __and__ more\n'
 
 def test_b():
     res = convert('<p>text <b>and</b> more</p>')
-    assert res == '\ntext *and* more\n'
+    assert res == '\ntext **and** more\n'
 
 def test_span():
     res = convert('<p>text <span>and</span> more</p>')
-    assert res == '\ntext *and* more\n'
+    assert res == '\ntext **and** more\n'
     res = convert('<p>text <span class="author">author2</span> more</p>')
     assert res == '= Title\n:author: author2\n:figure-caption!:\n:imagesdir: ..\n\n[.lead]\nSummary\n\n\ntext  more\n'
 
 def test_strong():
     res = convert('<p>text <strong>and</strong> more</p>')
-    assert res == '\ntext *and* more\n'
+    assert res == '\ntext **and** more\n'
 
 def test_cpp():
     res = convert('<p>text C++ more</p>')
