@@ -115,7 +115,7 @@ def main():
                         print(img)
             except accuwebsite.ConversionError as ce:
                 # Report error, and write out .err.html file for manual work.
-                print('ConversionError {} in {}'.format(ce, fname), file=sys.stderr)
+                print('{} in {}'.format(ce, fname), file=sys.stderr)
                 errname = pathlib.Path(fname).name
                 errfile = pathlib.Path(errname + '.err.html')
                 with errfile.open(mode='w') as f:
