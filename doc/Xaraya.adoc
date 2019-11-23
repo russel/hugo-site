@@ -143,6 +143,27 @@ This can dump out journal pages, conference and general pages, and book reviews.
 
 We end up with a whole pile of JSON files, but at least we can now see what we're dealing with.
 
+==== Example
+
+In this example, we log onto the current ACCU host in one window and use SSH port
+forwarding to provide access to the ACCU host MySQL port on our local system.
+
+----
+$ ssh -L 13306:localhost:3306 accu@dennis.accu.org
+----
+
+With that connection established, we can then run `accu-dump-xar` in another terminal.
+In this example, we're dumping all journal articles under directory `articles`.
+
+----
+$ ./accu-dump-xar --host localhost --port 13306 -o articles -p password
+----
+
+Looking in `articles/journals` you will find it contains a set of JSON files.
+Each file contains the Xaraya data for a single article.
+
+To do this, you will need SSH access to `dennis.accu.org` and the Xaraya MySQL password.
+
 === `accu-json-bib`
 
 Given a set of JSON files, this spits out a `.bib` file containing the metadata contained within
@@ -186,6 +207,17 @@ We also look out for Notes (summaries) that have HTML.
 These are ignored in this tool; when the article is converted to AsciiDoc, the summary
 is put at the start of the body.
 
+==== Example
+
+Given a directory `articles/journals` containing JSON article files, as downloaded
+in the previous example, the following commands dump out `.bib` files with the JSON
+metadata from the JSON files for each journal.
+
+----
+$ ./accu-json-bib -j Overload articles/journals/*.json > overload_xaraya.bib
+$ ./accu-json-bib -j CVu articles/journals/*.json > cvu_xaraya.bib
+----
+
 === `accu-bib-merge`
 
 Given one of the manually curated `.bib` files and a `.bib` file that's the output from
@@ -194,6 +226,27 @@ from both the manual file and the Xaraya metadata.
 Some of the manual `.bib` entries contain the Xaraya article ID, in which case entries
 are matched on that.
 Otherwise we restort to trying to match on journal, year, month and title.
+
+==== Example
+
+We start with the handcrafted `overload_bib.txt` and `cvu_bib.txt` as used
+currently.
+
+As noted earlier, `accu-dump-xar` converts the data it downloads from Latin1 to UTF-8.
+We need to perform the same conversion on these files too.
+
+----
+$ iconv -f ISO8859-1 -t UTF8 overload_bib.txt > overload_txt.bib
+$ iconv -f ISO8859-1 -t UTF8 cvu_bib.txt > cvu_txt.bib
+----
+
+With character sets aligned, we can now proceed to merge the two `.bib` files to obtain
+a single consolidated `.bib` for each journal.
+
+----
+$ ./accu-bib-merge overload_txt.bib overload_xaraya.bib > overload.bib
+$ ./accu-bib-merge cvu_txt.bib cvu_xaraya.bib > cvu.bib
+----
 
 === `accu-bib`
 
@@ -253,6 +306,54 @@ list of `cp` command lines.
 These attempt to copy images from a copy of the website images directory hierarchy
 to the place in which they should reside in the new layout.
 Links in the generated AsciiDoc are set to the location in the new layout.
+
+==== Example
+
+Given downloaded JSON files and merged `.bib` files from the previous examples, let's
+now generate AsciiDoc files for all journal articles.
+
+----
+$ ./accu-json-adoc -j Overload --bib overload.bib --include-bio articles/journals/*.json > overload_images.sh
+Conversion error Unknown Tag typename in articles/journals/00215.json
+Conversion error Unknown Tag typename in articles/journals/00232.json
+Conversion error Unknown Tag class in articles/journals/00296.json
+...
+$ ./accu-json-adoc -j CVu --bib cvu.bib --include-bio articles/journals/*.json > cvu_images.sh
+Conversion error Unknown Tag ctype.h in articles/journals/01646.json
+Conversion error Unknown Tag codelisting in articles/journals/02101.json
+Conversion error Unknown Tag codelisting in articles/journals/02165.json
+...
+----
+
+As you can see, not all the input files can be processed. This is usually due to an unrecognised
+HTML tag, but other problems included tables nested beyond 2 levels, images with no `src`
+tag and list items without an enclosing list. In each case, the conversion writes a file
+e.g. `00215.json.err.html` containing the offending HTML, with a comment at the top
+with the article details.
+
+The output files are scripts to move images from their position in the current website
+to the correct location in the new article tree. For example:
+
+----
+$ head overload_images.sh
+cp "./content/images/journals/ol77/ol77_AOP_Figure1_300dpi.png" journal/overload/2007/feb/programming___abstraction_by_design_0.png
+cp "./content/images/journals/ol77/ol77_AOP_Figure2_300dpi.png" journal/overload/2007/feb/programming___abstraction_by_design_1.png
+cp "./content/images/journals/ol77/ol77_AOP_Figure3_300dpi.png" journal/overload/2007/feb/programming___abstraction_by_design_2.png
+cp "./content/images/journals/ol78/Figure1.png" journal/overload/2007/apr/software_product_line_engineering_with_feature_models_0.png
+cp "./content/images/journals/ol78/Figure2v2.png" journal/overload/2007/apr/software_product_line_engineering_with_feature_models_1.png
+cp "./content/images/journals/ol78/Figure3v2.png" journal/overload/2007/apr/software_product_line_engineering_with_feature_models_2.png
+cp "./content/images/journals/ol78/Figure4v2.png" journal/overload/2007/apr/software_product_line_engineering_with_feature_models_3.png
+----
+
+If you have access to the ACCU host, you can generate a suitable tarball of images thus:
+
+----
+accu@dennis:~/public_html$ tar cvzf images.tar.gz content/images/journals/*/
+----
+
+When running the scripts that move images to the correct destination, you will find that
+not all the images are found. This seems to be image sources in the HTML that do not
+correspond to the actual image location.
 
 === `accu-xml-tool`
 
