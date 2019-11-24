@@ -125,6 +125,7 @@ class AdocOutput(BaseOutput):
         self.list_item = []
         self.image_rename = []
         self.image_index = 0
+        self.swallow_next_leading_space = False
         self.in_pre = False
         self.in_biblio_ref = False
         self.in_biblio_re = re.compile(r'\[.+?\]\s*(?P<ref>.*)')
@@ -144,6 +145,11 @@ class AdocOutput(BaseOutput):
             if callable(item):
                 res += item(res)
             elif isinstance(item, str):
+                if self.swallow_next_leading_space:
+                    item = item.lstrip()
+                    print(item)
+                    if item:
+                        self.swallow_next_leading_space = False
                 res += item
             else:
                 raise ConversionError('Unexpected item {}'.format(item))
@@ -152,8 +158,12 @@ class AdocOutput(BaseOutput):
     def to_line_start(self, s):
         return '' if len(s) == 0 or s.endswith('\n') else '\n'
 
+    def swallow_leading_space(self, s):
+        self.swallow_next_leading_space = True
+        return ''
+
     def blank_line_before(self):
-        return [self.to_line_start,  '+\n' if len(self.list_item) > 0 else '\n']
+        return [self.to_line_start, '+\n' if len(self.list_item) > 0 else '\n']
 
     def imgpath(self, src):
         if not src:
@@ -195,9 +205,14 @@ class AdocOutput(BaseOutput):
         # TODO. Prevent character substitution on =>, <=, -> <=>.
         return [s]
 
+    def strip_para_start(self, s):
+        while s and (callable(s[0]) or s[0] == '+\n' or not s[0].strip()):
+            del s[0]
+        return s
+
     def p(self, tag):
         if self.has_class(tag, 'bio'):
-            self.bio = self.blank_line_before() + ['.{author}\n****\n'] + self.convert_children(tag) + [self.to_line_start, '****\n']
+            self.bio = self.blank_line_before() + ['.{author}\n****\n'] + self.convert_children(tag) + [self.to_line_start, '****\n', self.swallow_leading_space]
             return []
         elif self.has_class(tag, 'quote'):
             # This is a bit nasty. We want the formatted text (so we include
@@ -225,9 +240,9 @@ class AdocOutput(BaseOutput):
                 else:
                     by = None
             if by:
-                return self.blank_line_before() + ['[quote,{by}]\n____\n'.format(by=by)] + quote + [self.to_line_start, '____\n']
+                return self.blank_line_before() + ['[quote,{by}]\n____\n'.format(by=by)] + quote + [self.to_line_start, '____\n', self.swallow_leading_space]
             else:
-                return self.blank_line_before() + ['[quote]\n____\n'] + quote + [self.to_line_start, '____\n']
+                return self.blank_line_before() + ['[quote]\n____\n'] + quote + [self.to_line_start, '____\n', self.swallow_leading_space]
         elif self.has_class(tag, 'blockquote'):
             return self.blockquote(tag)
         elif self.has_class(tag, 'Byline'):
@@ -251,10 +266,10 @@ class AdocOutput(BaseOutput):
             para = self.convert_children(tag)
             if para and not callable(para[0]):
                 para[0] = para[0].lstrip()
-            return self.blank_line_before() + para + [self.to_line_start]
+            return self.blank_line_before() + para
 
     def blockquote(self, tag):
-        return self.blank_line_before() + ['====\n'] + self.convert_children(tag) + [self.to_line_start, '====\n']
+        return self.blank_line_before() + ['====\n'] + self.convert_children(tag) + [self.to_line_start, '====\n', self.swallow_leading_space]
 
     def code(self, tag):
         if self.in_pre:
@@ -296,10 +311,11 @@ class AdocOutput(BaseOutput):
         return ['('] + self.convert_children(tag) + [')']
 
     def span(self, tag):
-        return ['**'] + self.convert_children(tag) + ['**']
+        # Span usage in journals always has <b></b> interior.
+        return self.convert_children(tag)
 
     def hr(self, tag):
-        return self.blank_line_before() + ["'''\n"]
+        return self.blank_line_before() + ["'''\n", self.swallow_leading_space]
 
     def div(self, tag):
         return self.convert_children(tag)
@@ -315,7 +331,7 @@ class AdocOutput(BaseOutput):
         hdr = '=' * n
         if self.join_list(title) == 'References':
             hdr = '[bibliography]\n' + hdr
-        return self.blank_line_before() + [hdr + ' '] + title + ['\n']
+        return self.blank_line_before() + [hdr + ' '] + title + ['\n', self.swallow_leading_space]
 
     def h2(self, tag):
         return self.hn(tag, 2)
@@ -336,10 +352,10 @@ class AdocOutput(BaseOutput):
         self.in_pre = True
         src = self.convert_children(tag)
         self.in_pre = False
-        return self.blank_line_before() + ['[source]\n----\n'] + src + ['\n----\n']
+        return self.blank_line_before() + ['[source]\n----\n'] + src + ['\n----\n', self.swallow_leading_space]
 
     def br(self, tag):
-        return [' +\n']
+        return [' +\n', self.swallow_leading_space] + self.convert_children(tag)
 
     def ul(self, tag):
         self.list_item.append('*' * self.ul_level)
@@ -361,19 +377,19 @@ class AdocOutput(BaseOutput):
         if len(self.list_item) < 1:
             raise ConversionError('List item without enclosing list')
         # Look out for a list item that starts with a continuation.
-        item = self.convert_children(tag)
-        while item and (callable(item[0]) or item[0] == '+\n'):
-            del item[0]
-        return [self.to_line_start, self.list_item[-1] + ' '] + item + [self.to_line_start]
+        # AsciiDoctor doesn't expect continuations before you have anything.
+        item = self.strip_para_start(self.convert_children(tag))
+        return [self.to_line_start, self.list_item[-1] + ' '] + item + [self.to_line_start, self.swallow_leading_space]
 
     def dl(self, tag):
-        return self.blank_line_before() + self.convert_children(tag) + [self.to_line_start, '\n']
+        return self.blank_line_before() + self.convert_children(tag) + [self.to_line_start, self.swallow_leading_space]
 
     def dt(self, tag):
-        return self.blank_line_before() + self.convert_children(tag) + ['::\n']
+        return self.blank_line_before() + self.convert_children(tag) + ['::']
 
     def dd(self, tag):
-        return self.blank_line_before() + ['****\n'] + self.convert_children(tag) + [self.to_line_start, '****\n']
+        dd = self.strip_para_start(self.convert_children(tag))
+        return [self.to_line_start] + dd
 
     def table(self, tag):
         self.table_level += 1
@@ -386,11 +402,12 @@ class AdocOutput(BaseOutput):
             res = self.blank_line_before() + ['{}\n'.format(self.table_delim_start[self.table_level])]
         res = res + self.convert_children(tag)
         if sidebar:
-            res = res + self.blank_line_before() + ['{}\n****'.format(self.table_delim_end[self.table_level])]
+            res = res + self.blank_line_before() + ['{}\n****\n'.format(self.table_delim_end[self.table_level]), self.swallow_leading_space]
         else:
-            res = res + self.blank_line_before() + ['{}\n'.format(self.table_delim_end[self.table_level])]
+            res = res + self.blank_line_before() + ['{}\n'.format(self.table_delim_end[self.table_level]), self.swallow_leading_space]
         self.table_level -= 1
 
+        return res
         # Look out for particular table formations and replace with
         # more appropriate markup.
         s = self.join_list(res)
@@ -461,11 +478,12 @@ class AdocOutput(BaseOutput):
 
     def img(self, tag):
         src = self.imgpath(tag.get('src'))
-        return [self.to_line_start, 'image::{src}[]\n'.format(src=src)]
+        return [self.to_line_start, 'image::{src}[]\n'.format(src=src), self.swallow_leading_space]
 
     def tidy_adoc(self, adoc):
         # Strip any [] around an inline ref.
-        return self.tidy_xref_re.sub(lambda m: m.group('ref'), adoc)
+        res = self.tidy_xref_re.sub(lambda m: m.group('ref'), adoc)
+        return res
 
     def convert_document(self, soup):
         """ Convert the document and return the converted text."""
