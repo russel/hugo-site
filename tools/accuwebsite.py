@@ -162,8 +162,27 @@ class AdocOutput(BaseOutput):
         self.swallow_next_leading_space = True
         return ''
 
+    def ensure_blank_line(self, s):
+        if len(s) == 0 or s.endswith('\n\n'):
+            return ''
+        elif s.endswith('\n'):
+            return '\n'
+        else:
+            return '\n\n'
+
+    def ensure_blank_line_continuation(self, s):
+        if len(s) == 0 or s.endswith('\n+\n'):
+            return ''
+        elif s.endswith('\n'):
+            return '+\n'
+        else:
+            return '\n+\n'
+
     def blank_line_before(self):
-        return [self.to_line_start, '+\n' if len(self.list_item) > 0 else '\n']
+        if len(self.list_item) > 0:
+            return [self.ensure_blank_line_continuation]
+        else:
+            return [self.ensure_blank_line]
 
     def imgpath(self, src):
         if not src:
@@ -402,9 +421,9 @@ class AdocOutput(BaseOutput):
             res = self.blank_line_before() + ['{}\n'.format(self.table_delim_start[self.table_level])]
         res = res + self.convert_children(tag)
         if sidebar:
-            res = res + self.blank_line_before() + ['{}\n****\n'.format(self.table_delim_end[self.table_level]), self.swallow_leading_space]
+            res = res + [self.to_line_start, '{}\n****\n'.format(self.table_delim_end[self.table_level]), self.swallow_leading_space]
         else:
-            res = res + self.blank_line_before() + ['{}\n'.format(self.table_delim_end[self.table_level]), self.swallow_leading_space]
+            res = res + [self.to_line_start, '{}\n'.format(self.table_delim_end[self.table_level]), self.swallow_leading_space]
         self.table_level -= 1
 
         return res
