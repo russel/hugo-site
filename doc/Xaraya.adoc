@@ -257,11 +257,55 @@ for Bob's tool.
 `accu-bib` reads `.bib` files and emits output based on an input template.
 I hope we won't end up using it.
 
-=== `accu-json-adoc`
+=== `accu-json-hugo`
 
-Given a set of JSON files and a `.bib`, this emits one file per JSON file containing the
-input article translated to AsciiDoc, with all metadata encoded as Hugo frontmatter.
-Output looks like this:
+Given a set of JSON files and a `.bib`, this emits one file per JSON
+file containing the input article either as HTML (prettified, and with
+image locations adjusted) or translated to AsciiDoc. In both cases all metadata
+is encoded as Hugo frontmatter.  Output looks like this for HTML:
+
+----
+---
+title: Afterwood
+author: Chris Oldwood
+date: 2018-02-01T16:13:46
+draft: false
+type: journal
+journals:
+- Overload
+month: February
+year: 2018
+aliases:
+- /xaraya/journals/2461.html
+categories:
+- Process Topics
+description: Can you code on paper in an interview? Chris Oldwood recounts his attempts to write a calendar.
+number: 143
+volume: 26
+pages: 24
+contributors: ['Oldwood, Chris']
+---
+<div class="article-content">
+<div class="article-summary">Can you code on paper in an interview? Chris Oldwood recounts his attempts to write a calendar.</div>
+
+<p>
+ The interviewer slid a pencil and a sheet of A4 paper over in my direction and said “I’d like you to write a little bit of code to print a calendar.” I thought to myself “that doesn’t seem too hard”.
+</p>
+
+<p>
+ This wasn’t the very start of the interview, there were a few pleasantries exchanged before cutting to the chase. In that opening introduction, I quickly learned that my interviewer did not work in my department or even my programming language of choice. His personal preference was for Java but given that this was a brand new team with only a project manager who hadn’t written a line of code in years, he was drafted in from another team to fill the void. I let out a disguised sigh of relief as I realised I wasn’t going to get quizzed about obscure C++ trivia.
+</p>
+----
+
+The HTML output adds the following `div` enclosures:
+
+* `article-content`. Encloses the entire article text.
+* `article-summary`. Encloses the article summary, positioned at the top of the output.
+* `article-bio`. Encloses any author bio indicated by `<p class="bio">`. If present,
+  this is moved to the end of the article.
+
+Here's sample AsciiDoc output:
+
 ----
 ---
 title: Afterwood
@@ -301,11 +345,11 @@ Output files are placed in a path as outlined in <<Layout.adoc#_large_binaries_d
 
 Images are not stored in Xaraya, Instead they're in a directory hierarchy handled by
 Apache.
-If converting to AsciiDoc, `accu-json-adoc` also emits to standard output a
+If converting to AsciiDoc, `accu-json-hugo` also emits to standard output a
 list of `cp` command lines.
 These attempt to copy images from a copy of the website images directory hierarchy
 to the place in which they should reside in the new layout.
-Links in the generated AsciiDoc are set to the location in the new layout.
+Links in the generated HTML or AsciiDoc are set to the location in the new layout.
 
 ==== Example
 
@@ -313,12 +357,12 @@ Given downloaded JSON files and merged `.bib` files from the previous examples, 
 now generate AsciiDoc files for all journal articles.
 
 ----
-$ ./accu-json-adoc -j Overload --bib overload.bib --include-bio articles/journals/*.json > overload_images.sh
+$ ./accu-json-hugo -j Overload --bib overload.bib --format adoc --include-bio articles/journals/*.json > overload_images.sh
 Conversion error Unknown Tag typename in articles/journals/00215.json
 Conversion error Unknown Tag typename in articles/journals/00232.json
 Conversion error Unknown Tag class in articles/journals/00296.json
 ...
-$ ./accu-json-adoc -j CVu --bib cvu.bib --include-bio articles/journals/*.json > cvu_images.sh
+$ ./accu-json-adoc -j CVu --bib cvu.bib --format adoc --include-bio articles/journals/*.json > cvu_images.sh
 Conversion error Unknown Tag ctype.h in articles/journals/01646.json
 Conversion error Unknown Tag codelisting in articles/journals/02101.json
 Conversion error Unknown Tag codelisting in articles/journals/02165.json
