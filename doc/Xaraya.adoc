@@ -286,7 +286,7 @@ pages: 24
 contributors: ['Oldwood, Chris']
 ---
 <div class="article-content">
-<div class="article-summary">Can you code on paper in an interview? Chris Oldwood recounts his attempts to write a calendar.</div>
+<div class="article-summary"><p>Can you code on paper in an interview? Chris Oldwood recounts his attempts to write a calendar.</p></div>
 
 <p>
  The interviewer slid a pencil and a sheet of A4 paper over in my direction and said “I’d like you to write a little bit of code to print a calendar.” I thought to myself “that doesn’t seem too hard”.
@@ -392,12 +392,12 @@ cp "./content/images/journals/ol78/Figure4v2.png" journal/overload/2007/apr/soft
 If you have access to the ACCU host, you can generate a suitable tarball of images thus:
 
 ----
-accu@dennis:~/public_html$ tar cvzf images.tar.gz content/images/journals/*/
+accu@dennis:~/public_html$ tar cvzf images.tar.gz --exclude "*.pdf" --exclude "*Cover*" content/images/journals/*/ var/uploads/journals/resources var/uploads/journals/cvu*
 ----
 
 When running the scripts that move images to the correct destination, you will find that
 not all the images are found. This seems to be image sources in the HTML that do not
-correspond to the actual image location.
+correspond to the actual image location. In most cases this can be corrected manually.
 
 === `accu-xml-tool`
 

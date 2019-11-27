@@ -5,6 +5,7 @@
 import json
 import pathlib
 import re
+import sys
 import urllib.parse
 
 # Standard path (URL part after site) generators
@@ -111,6 +112,9 @@ class BaseOutput:
     def body(self, tag):
         return self.convert_children(tag)
 
+    def div(self, tag):
+        return self.convert_children(tag)
+
     def unknown_tag(self, tag):
         raise ConversionError('Unknown Tag {}'.format(tag.name))
 
@@ -119,7 +123,7 @@ class BaseOutput:
             raise ConversionError('Image with no src tag')
         if src.startswith('http://accu.org/'):
             src = src.replace('http://accu.org/', '/', 1)
-        if src.startswith('/content/images/'):
+        if src.startswith('/content/images/') or src.startswith('/var/uploads/'):
             p = pathlib.Path(src)
             newsrc = '{title}_{idx}{suffix}'.format(
                 title=self.title_filename,
@@ -531,6 +535,12 @@ class HtmlOutput(BaseOutput):
         self.bio = None
 
     def unknown_tag(self, tag):
+        for t in tag.find_all('img'):
+            t['src'] = '../' + self.imgpath(t.get('src'))
+        for t in tag.find_all('p'):
+            if self.has_class(t, 'bio'):
+                self.bio = t.prettify()
+                t.string=''
         return [tag.prettify()]
 
     def p(self, tag):
@@ -538,20 +548,19 @@ class HtmlOutput(BaseOutput):
             self.bio = tag.prettify()
             return []
         else:
-            return [tag.prettify()]
+            return self.unknown_tag(tag)
 
     def img(self, tag):
-        src = self.imgpath(tag.get('src'))
-        tag['src'] = src
+        tag['src'] = '../' + self.imgpath(tag.get('src'))
         return [tag.prettify()]
 
     def convert_document(self, soup):
         """ Convert the document and return the conversion."""
         body = self.convert(soup)
         if self.summary:
-            body = ['<div class="article-summary">'] + self.summary + ['</div>\n\n'] + body
+            body = ['<div class="article-summary">\n<p>'] + self.summary + ['</p>\n</div>\n\n'] + body
         if self.includebio and self.bio:
-            body = body + ['\n\n<div class="article-bio">'] + [self.bio] + ['</div>\n\n']
+            body = body + ['\n\n<div class="article-bio"><p>'] + [self.bio] + ['</p></div>\n\n']
         return '<div class="article-content">\n' + ''.join(body) + '</div>\n'
 
 # Helper functions for standard conversions.

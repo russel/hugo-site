@@ -41,11 +41,13 @@ Considerations:
 ** Individual articles in a file named after the article title, once it has been lowercased,
    spaces replaced by `_` and all characters not in `[a-z0-9]` removed.
    Any newlines in article titles are replaced with spaces.
-** Articles files are `.adoc`.
+** Articles files are `.adoc` or `.html`.
 ** Image files to be named with the article title (post previous processing) and a serial suffix.
    I am dithering over whether they should go in the issue directory, or (as binary blobs)
    the should go in the issue directory under `assets`. The article images aren't generally
-   big, but I worry about binaries.
+   big, but I worry about binaries. Note that Hugo generates AsciiDoc AND HTML
+   articles into a file `index.html` in a directory with the article file name, so any
+   images referenced will  be in the directory above the generated HTML.
 ** Article files and image files are checked in to repo.
 * `journal/<journal name>` to be a subrepo. This is so the subrepo can be stored
    in a private or public repo depending on the journal accessibility.
