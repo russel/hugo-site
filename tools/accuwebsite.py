@@ -22,10 +22,10 @@ def article_title_to_filename(title):
         continue
     return fname
 
-def article_path(journal, year, month, title):
+def article_path(fmt, journal, year, month, title):
     p = article_dir(journal, year, month)
     p = p / article_title_to_filename(title)
-    return str(p) + ".adoc"
+    return str(p) + '.' + fmt
 
 def link_path(linkno):
     p = pathlib.Path("journal") / "index" / linkno
@@ -39,6 +39,20 @@ class ConversionError(Exception):
         super().__init__("Conversion error {}".format(msg))
 
 class BaseOutput:
+    def __init__(self, title, author, summary, includebio):
+        self.title = title
+        self.title_filename = article_title_to_filename(title)
+        self.author = author
+        if summary:
+            self.summary = [ summary ]
+        else:
+            self.summary = None
+        self.bio = None
+        self.includebio = includebio
+
+        self.image_rename = []
+        self.image_index = 0
+
     def convert_document(self, soup):
         """ Convert the document and return the converted text."""
         return ''.join(self.convert(soup))
@@ -100,22 +114,34 @@ class BaseOutput:
     def unknown_tag(self, tag):
         raise ConversionError('Unknown Tag {}'.format(tag.name))
 
-    def image_renames(self):
-        return []
+    def imgpath(self, src):
+        if not src:
+            raise ConversionError('Image with no src tag')
+        if src.startswith('http://accu.org/'):
+            src = src.replace('http://accu.org/', '/', 1)
+        if src.startswith('/content/images/'):
+            p = pathlib.Path(src)
+            newsrc = '{title}_{idx}{suffix}'.format(
+                title=self.title_filename,
+                idx = self.image_index,
+                suffix = p.suffix)
+            self.image_index += 1
+            self.image_rename.append((src, newsrc))
+            return newsrc
+        else:
+            return src
+
+    def image_renames(self, basedir=''):
+        res = []
+        for ren in self.image_rename:
+            p = pathlib.Path(basedir) / ren[1]
+            res.append('cp ".{}" {}'.format(urllib.parse.unquote(ren[0]).strip(), str(p)))
+        return res
 
 class AdocOutput(BaseOutput):
-    def __init__(self, title=None, author=None, summary=None, includebio=False):
-        self.title = title
-        self.title_filename = None
-        if title:
-            self.title_filename = article_title_to_filename(title)
-        self.author = author
-        if summary:
-            self.summary = [ summary ]
-        else:
-            self.summary = None
-        self.bio = None
-        self.includebio = includebio
+    def __init__(self, title, author=None, summary=None, includebio=False):
+        super().__init__(title, author, summary, includebio)
+
         self.ul_level = 1
         self.ol_level = 1
         self.table_level = -1
@@ -123,8 +149,6 @@ class AdocOutput(BaseOutput):
         self.table_delim_start = ['[separator=¦]\n|===', '!===']
         self.table_delim_end = ['|===', '!===']
         self.list_item = []
-        self.image_rename = []
-        self.image_index = 0
         self.in_pre = False
         self.in_biblio_ref = False
         self.in_biblio_re = re.compile(r'\[.+?\]\s*(?P<ref>.*)')
@@ -154,23 +178,6 @@ class AdocOutput(BaseOutput):
 
     def blank_line_before(self):
         return [self.to_line_start,  '+\n' if len(self.list_item) > 0 else '\n']
-
-    def imgpath(self, src):
-        if not src:
-            raise ConversionError('Image with no src tag')
-        if src.startswith('http://accu.org/'):
-            src = src.replace('http://accu.org/', '/', 1)
-        if src.startswith('/content/images/'):
-            p = pathlib.Path(src)
-            newsrc = '{title}_{idx}{suffix}'.format(
-                title=self.title_filename,
-                idx = self.image_index,
-                suffix = p.suffix)
-            self.image_index += 1
-            self.image_rename.append((src, newsrc))
-            return newsrc
-        else:
-            return src
 
     def get_string(self, s):
         s = s.replace('\r', '')
@@ -481,16 +488,9 @@ class AdocOutput(BaseOutput):
             res = res + self.bio
         return self.tidy_adoc(self.join_list(res))
 
-    def image_renames(self, basedir=''):
-        res = []
-        for ren in self.image_rename:
-            p = pathlib.Path(basedir) / ren[1]
-            res.append('cp ".{}" {}'.format(urllib.parse.unquote(ren[0]).strip(), str(p)))
-        return res
-
 class HtmlOutput(BaseOutput):
-    pass
-    def __init__(self):
+    def __init__(self, title, author=None, summary=None, includebio=False):
+        super().__init__(title, author, summary, includebio)
         self.bio = None
 
     def unknown_tag(self, tag):
@@ -503,14 +503,19 @@ class HtmlOutput(BaseOutput):
         else:
             return [tag.prettify()]
 
+    def img(self, tag):
+        src = self.imgpath(tag.get('src'))
+        tag['src'] = src
+        return [tag.prettify()]
+
     def convert_document(self, soup):
         """ Convert the document and return the conversion."""
         body = self.convert(soup)
-        res = ['<html>\n'] + body
-        if self.bio:
-            res = res + [self.bio]
-        res = res + ['</html>']
-        return ''.join(res)
+        if self.summary:
+            body = ['<div class="article-summary">'] + self.summary + ['</div>\n\n'] + body
+        if self.includebio and self.bio:
+            body = body + ['\n\n<div class="article-bio">'] + [self.bio] + ['</div>\n\n']
+        return '<div class="article-content">\n' + ''.join(body) + '</div>\n'
 
 # Helper functions for standard conversions.
 def convert_article(source, inputformat, outputformat, title, author, summary, imagedir='', includebio=False):
@@ -531,7 +536,7 @@ def convert_article(source, inputformat, outputformat, title, author, summary, i
         }
     outputs = {
         "adoc": AdocOutput(title=title, author=author, summary=summary, includebio=includebio),
-        "html": HtmlOutput()
+        "html": HtmlOutput(title=title, author=author, summary=summary, includebio=includebio)
     }
 
     try:

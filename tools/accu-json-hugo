@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 #
-# accu-json-adoc --journal <journal-name> --bib <bibfile> [--site-dir <dir>] JSON file <JSON file ....>
+# accu-json-hugo --journal <journal-name> --bib <bibfile> [--format adoc|html] [--site-dir <dir>] [--verbose] JSON file <JSON file ....>
 #
 # Generate Hugo adoc from JSON. Write full set of Hugo front matter in YAML
 # gained from JSON and lookup in bib file.
@@ -87,6 +87,10 @@ def main():
                         action='store',
                         required=True,
                         help='bib file with more metadata', metavar='BIBFILE')
+    parser.add_argument('-f', '--format', dest='format',
+                        action='store', default='html',
+                        choices=['adoc', 'html'],
+                        help='\'adoc\' or \'html\'', metavar='FORMAT')
     parser.add_argument('-s', '--site-dir', dest='sitedir',
                         action='store', default='.',
                         help='site base directory', metavar='DIR')
@@ -112,12 +116,12 @@ def main():
                 if not bibentry:
                     continue
                 frontmatter = gen_frontmatter(article, bibentry)
-                outfile = pathlib.Path(args.sitedir) / accuwebsite.article_path(article['Journal'], article['Year'], article['Month'], article['Title'])
+                outfile = pathlib.Path(args.sitedir) / accuwebsite.article_path(args.format, article['Journal'], article['Year'], article['Month'], article['Title'])
                 outfile.parent.mkdir(parents=True, exist_ok=True)
-                adoc = accuwebsite.convert_article(article['Body'], 'html', 'adoc', article['Title'], article['Author'], article['Note'], str(outfile.parent), args.includebio)
-                outfile.write_text(frontmatter + adoc[0])
-                if adoc[1]:
-                    for img in adoc[1]:
+                doc = accuwebsite.convert_article(article['Body'], 'html', args.format, article['Title'], article['Author'], article['Note'], str(outfile.parent), args.includebio)
+                outfile.write_text(frontmatter + doc[0])
+                if doc[1]:
+                    for img in doc[1]:
                         print(img)
             except accuwebsite.ConversionError as ce:
                 # Report error, and write out .err.html file for manual work.
