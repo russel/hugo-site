@@ -13,7 +13,10 @@ import sys
 import pymysql
 
 def toutf8(s):
-    return s.encode('latin1').decode('utf-8')
+    try:
+        return s.encode('latin1').decode('utf-8')
+    except:
+        return s
 
 def dump_articles(db, outputdir, pubtype, pubtypeid):
     propids = { 96: "keywords", 97: "author", 98: "author-email",
@@ -78,7 +81,7 @@ from xar_bookreviews"""
                 "publisher": toutf8(row[4]),
                 "pages": toutf8(row[5]),
                 "price": toutf8(row[6]),
-                "rating": toutf8(row[7]),
+                "rating": row[7],
                 "summary": toutf8(row[8]),
                 "reviewer": toutf8(row[9]),
                 "cvu": toutf8(row[10]),
