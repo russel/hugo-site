@@ -7,6 +7,3 @@
 [submodule "accu.org/content/journal/cvu"]
 	path = accu.org/content/journal/cvu
 	url = https://git.accu.org/jim/website-cvu-html.git
-[submodule "overload-html"]
-	path = accu.org/content/journal/overload
-	url = https://git.accu.org/jim/website-overload-html.git
