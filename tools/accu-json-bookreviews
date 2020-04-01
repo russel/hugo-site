@@ -28,6 +28,8 @@ def gen_frontmatter(review):
         date = "{date}"
         reviewer = "{reviewer}"
         type = "bookreview"
+        bookreviews_authors = "{author}"
+        bookreviews_reviewers = "{reviewer}"
         ''').format(
             id='{:05}'.format(review['id']),
             title=review['title'],
