@@ -21,6 +21,7 @@ import accuwebsite
 def gen_frontmatter(review):
     """Return the TOML structured metadata for the review data."""
     return '+++\n' + textwrap.dedent('''\
+        id = "{id}"
         title = "{title}"
         author = "{author}"
         isbn = "{isbn}"
@@ -28,6 +29,7 @@ def gen_frontmatter(review):
         reviewer = "{reviewer}"
         type = "bookreview"
         ''').format(
+            id='{:05}'.format(review['id']),
             title=review['title'],
             author=review['author'],
             isbn=review['isbn'],
