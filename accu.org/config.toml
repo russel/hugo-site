@@ -85,7 +85,7 @@ paginate = 10
     email = "your@email.com"
 
     about_us = "<p>ACCU is a voluntary organisation dedicated to improving programming practice.</p>"
-    copyright = "Copyright (c) 2018-2019 ACCU; all rights reserved."
+    copyright = "Copyright (c) 2018–2020 ACCU; all rights reserved."
 
     # Format dates with Go's time formatting
     date_format = "2 January 2006"
@@ -154,3 +154,5 @@ paginate = 10
   journal = "journals"
   contributor = "contributors"
   category = "categories"
+  bookreviews_author = "bookreviews_authors"
+  bookreviews_reviewer = "bookreviews_reviewers"
