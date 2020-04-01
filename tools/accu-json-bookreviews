@@ -1,0 +1,120 @@
+#!/usr/bin/python3
+
+""" Generate Hugo AsciiDoc from JSON.
+
+Write full set of Hugo frontmatter in TOML gained from JSON. Create indexes of
+authors and titles.
+
+"""
+
+import argparse
+import datetime
+import json
+import pathlib
+import sys
+import textwrap
+import traceback
+
+import accuwebsite
+
+
+def gen_frontmatter(review):
+    """Return the TOML structured metadata for the review data."""
+    return '+++\n' + textwrap.dedent('''\
+        title = "{title}"
+        author = "{author}"
+        isbn = "{isbn}"
+        date = "{date}"
+        reviewer = "{reviewer}"
+        type = "bookreview"
+        ''').format(
+            title=review['title'],
+            author=review['author'],
+            isbn=review['isbn'],
+            date=review['created'],
+            reviewer = review['reviewer'],
+        ) + '+++\n'
+
+
+def html_to_asciidoc(fragment):
+    """Return an AsciiDoc fragment given the HTML fragment."""
+    output, _ = accuwebsite.convert_article(fragment, 'html', 'adoc', 'Title', 'Author', summary='Summary')
+    return output.replace("""= Title
+:author: Author
+:figure-caption!:
+:imagesdir: ..
+
+[.lead]
+Summary
+
+""", '', 1)
+
+
+def process(review):
+    """Return the AsciiDoc page for the review."""
+    return '''
+[cols="2, 5"]
+|===
+| Title: | {title}
+| Author: | {author}
+| ISBN: | {isbn}
+| Publisher: | {publisher}
+| Pages: | {pages}
+| Price: | {price}
+| Reviewer: | {reviewer}
+| Review Date: | {date}
+| Rating: | {rating}
+| CVu: | {cvu}
+|===
+
+{review}
+'''.format(
+        title=review['title'],
+        author=review['author'],
+        isbn=review['isbn'],
+        publisher=review['publisher'],
+        pages=review['pages'],
+        price=html_to_asciidoc(review['price']),
+        reviewer=review['reviewer'],
+        date=datetime.datetime.strptime(review['created'], '%Y-%m-%dT%H:%M:%S').date(),
+        rating=review['rating'],
+        cvu=review['cvu'],
+        review=html_to_asciidoc(review['review']),
+    )
+
+
+def main():
+    parser = argparse.ArgumentParser(description='process Xaraya bookreviews dumped to JSON')
+    parser.add_argument('-s', '--site-dir', dest='sitedir',
+                        action='store', default='.',
+                        help='site base directory', metavar='DIR')
+    parser.add_argument('-v', '--verbose', dest='verbose',
+                        action='store_true', help='verbose output')
+    parser.add_argument('input', nargs='+',
+                        help='input JSON file',
+                        metavar='JSON file')
+    args = parser.parse_args()
+    try:
+        for fname in args.input:
+            if args.verbose:
+                print(fname, file=sys.stderr)
+            with open(fname) as f:
+                review = json.loads(f.read())
+            frontmatter = gen_frontmatter(review)
+            outfile = pathlib.Path(args.sitedir) / pathlib.Path(fname).with_suffix('.adoc').name
+            outfile.parent.mkdir(parents=True, exist_ok=True)
+            content = process(review)
+            outfile.write_text(frontmatter + content)
+        sys.exit(0)
+    except Exception as e:
+        traceback.print_exc()
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
+
+
+# Local Variables:
+# mode: Python
+# End:
