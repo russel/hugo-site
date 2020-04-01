@@ -55,18 +55,14 @@ Summary
 def process(review):
     """Return the AsciiDoc page for the review."""
     return '''
-[cols="2, 5"]
+[cols="1, 6, 1, 2"]
 |===
-| Title: | {title}
-| Author: | {author}
-| ISBN: | {isbn}
-| Publisher: | {publisher}
-| Pages: | {pages}
-| Price: | {price}
-| Reviewer: | {reviewer}
-| Review Date: | {date}
-| Rating: | {rating}
-| CVu: | {cvu}
+| Title: | {title} | Reviewer: | {reviewer}
+| Author: | {author}| Review Date: | {date}
+| ISBN: | {isbn}| Rating: | {rating}
+| Publisher: | {publisher}| CVu: | {cvu}
+| Pages: | {pages} | |
+| Price: | {price} | |
 |===
 
 {review}
